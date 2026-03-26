@@ -14,13 +14,6 @@
   --skeleton-shine: #f3f4f6;
 }
 
-body {
-  background-color: var(--bg-base);
-  color: var(--text-main);
-  transition: background-color 0.3s ease;
-}
-
-/* Dark theme (applied dynamically via class) */
 body.dark {
   --bg-base: #0B0F19;
   --bg-card: #111827;
@@ -31,6 +24,12 @@ body.dark {
   --skin-color: #475569;
   --skeleton-base: #1f2937;
   --skeleton-shine: #374151;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  transition: background-color 0.3s ease;
 }
 
 .animate-in {
