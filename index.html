@@ -132,7 +132,8 @@
 
     // --- AI Services ---
     const analyzeImageWithAI = async (base64Image) => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${AIzaSyB3N4PW5mpQgK6nYeZdA4NavqzrviZpXEI}`;
+
       const base64Data = base64Image.split(',')[1];
       
       const prompt = `You are a STRICT fashion analyzer. Look at this image carefully.
@@ -152,7 +153,8 @@ Format: [{"type": "...", "color": "#HEXCODE", "season": "all|summer|winter", "ta
     };
 
     const suggestOutfitWithAI = async (clothes, chatHistory, profile, favorites) => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${AIzaSyB3N4PW5mpQgK6nYeZdA4NavqzrviZpXEI}`;
+
       
       const cleanWardrobe = clothes.filter(c => !c.inLaundry && (c.targetGender === 'unisex' || c.targetGender === profile.gender || !c.targetGender));
       const wardrobeData = cleanWardrobe.map(c => ({ id: c.id, type: c.type, color: c.color, season: c.season }));
