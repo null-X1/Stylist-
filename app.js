@@ -1095,7 +1095,9 @@ const App = () => {
   return (
     <ToastContext.Provider value={showToast}>
       <ConfirmContext.Provider value={confirm}>
-        <style>{`:root { ${themeVariables} }`}</style>
+        
+<React.Fragment>
+       <style>{`:root { ${themeVariables} }`}</style>
         <div className="min-h-[100dvh] w-full bg-[var(--bg-base)] text-[var(--text-main)] transition-colors">
           {!user ? <AuthScreen /> : (
             <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
@@ -1150,6 +1152,7 @@ const App = () => {
             </div>
           )}
         </div>
+</React.Fragment>
       </ConfirmContext.Provider>
     </ToastContext.Provider>
   );
