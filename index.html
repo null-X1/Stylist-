@@ -132,7 +132,8 @@
 
     // --- AI Services ---
     const analyzeImageWithAI = async (base64Image) => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+
 
 
       const base64Data = base64Image.split(',')[1];
@@ -154,7 +155,8 @@ Format: [{"type": "...", "color": "#HEXCODE", "season": "all|summer|winter", "ta
     };
 
     const suggestOutfitWithAI = async (clothes, chatHistory, profile, favorites) => {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+
 
       
       const cleanWardrobe = clothes.filter(c => !c.inLaundry && (c.targetGender === 'unisex' || c.targetGender === profile.gender || !c.targetGender));
