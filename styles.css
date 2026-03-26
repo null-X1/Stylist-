@@ -1,0 +1,97 @@
+* {
+  font-family: 'Cairo', sans-serif;
+}
+
+:root {
+  --bg-base: #fafafa;
+  --bg-card: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --hover-bg: #f9fafb;
+  --skin-color: #cbd5e1;
+  --skeleton-base: #e5e7eb;
+  --skeleton-shine: #f3f4f6;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  transition: background-color 0.3s ease;
+}
+
+/* Dark theme (applied dynamically via class) */
+body.dark {
+  --bg-base: #0B0F19;
+  --bg-card: #111827;
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --border-color: #1f2937;
+  --hover-bg: #1f2937;
+  --skin-color: #475569;
+  --skeleton-base: #1f2937;
+  --skeleton-shine: #374151;
+}
+
+.animate-in {
+  animation: fadeInUp 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.2);
+}
+
+.hide-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-shine) 50%, var(--skeleton-base) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.toast-slide {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+.focus-ring:focus {
+  outline: none;
+  ring: 2px solid #6366f1;
+  ring-offset: 2px;
+}
