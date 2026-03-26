@@ -417,8 +417,630 @@ const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
   );
 };
 
-// باقي المكونات (ClosetView, AddClothingView, FavoritesView, ProfileModal) هي نفسها الموجودة في الكود الأصلي،
-// نظراً لطول الإجابة، سنكتفي بذكر أنها موجودة ويمكن إضافتها بنفس الشكل من الملف الأصلي.
+const ClosetView = ({ clothes, profile, user }) => {
+  const [filter, setFilter] = useState('All');
+  const [editingItem, setEditingItem] = useState(null);
+  const [gapAnalysis, setGapAnalysis] = useState(null);
+  const [isAnalyzingGaps, setIsAnalyzingGaps] = useState(false);
+  const showToast = useContext(ToastContext);
+  const confirm = useContext(ConfirmContext);
+
+  const getCategory = (type) => {
+    if (ITEM_TYPES.top.some(t => t.val === type)) return 'top';
+    if (ITEM_TYPES.bottom.some(t => t.val === type)) return 'bottom';
+    if (ITEM_TYPES.full.some(t => t.val === type)) return 'full';
+    if (ITEM_TYPES.shoes.some(t => t.val === type)) return 'shoes';
+    if (ITEM_TYPES.accessories.some(t => t.val === type)) return 'accessories';
+    return 'top';
+  };
+
+  const filteredClothes = useMemo(() => {
+    if (filter === 'laundry') return clothes.filter(c => c.inLaundry);
+    const nonLaundry = clothes.filter(c => !c.inLaundry);
+    if (filter === 'All') return nonLaundry;
+    return nonLaundry.filter(c => getCategory(c.type) === filter);
+  }, [clothes, filter]);
+
+  const handleDelete = async (id) => {
+    confirm('هل أنت متأكد من حذف هذه القطعة؟', async () => {
+      await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'clothes', id));
+      showToast('تم الحذف', 'success');
+    });
+  };
+
+  const toggleLaundry = async (item) => {
+    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'clothes', item.id), {
+      inLaundry: !item.inLaundry
+    });
+    showToast(item.inLaundry ? 'تم إخراجها من الغسيل' : 'تم إرسالها للغسيل', 'success');
+  };
+
+  const handleSaveEdit = async (updatedItem) => {
+    await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'clothes', updatedItem.id), updatedItem);
+    setEditingItem(null);
+    showToast('تم التعديل', 'success');
+  };
+
+  const handleAnalyzeGaps = async () => {
+    setIsAnalyzingGaps(true);
+    const result = await analyzeWardrobeGapsWithAI(clothes, profile);
+    setGapAnalysis(result);
+    setIsAnalyzingGaps(false);
+  };
+
+  const tabs = [
+    { id: 'All', label: 'الكل' }, { id: 'top', label: 'علوي' }, { id: 'bottom', label: 'سفلي' },
+    { id: 'full', label: 'كامل' }, { id: 'shoes', label: 'حذاء' }, { id: 'accessories', label: 'إكسسوار' },
+    { id: 'laundry', label: 'سلة الغسيل 🧺' }
+  ];
+
+  return (
+    <div className="space-y-4 relative">
+      <div className="flex flex-wrap justify-between items-center gap-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-black text-[var(--text-main)]">خزانتي</h2>
+          <span className="text-xs font-bold text-[var(--text-muted)] bg-[var(--bg-card)] px-3 py-1 rounded-full border border-[var(--border-color)]">
+            الإجمالي: {clothes.length}
+          </span>
+        </div>
+        <button onClick={handleAnalyzeGaps} disabled={isAnalyzingGaps || clothes.length === 0}
+          className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-full transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50">
+          {isAnalyzingGaps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          تحليل النواقص ✨
+        </button>
+      </div>
+
+      {gapAnalysis && (
+        <div className="bg-[var(--bg-card)] border-2 border-indigo-500/30 rounded-2xl p-4 shadow-md relative overflow-hidden animate-in">
+          <button onClick={() => setGapAnalysis(null)} className="absolute top-2 left-2 p-1 text-[var(--text-muted)] hover:text-indigo-500"><X className="w-4 h-4"/></button>
+          <h3 className="font-black text-indigo-500 text-sm mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4"/> رأي الستايليست:</h3>
+          <p className="text-xs font-bold text-[var(--text-main)] mb-4 leading-relaxed">{gapAnalysis.summary}</p>
+          <div className="space-y-2">
+            <p className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-wide">نوصيك باقتناء القطع التالية:</p>
+            {gapAnalysis.suggestions?.map((s, i) => (
+              <div key={i} className="flex items-center gap-3 bg-[var(--bg-base)] p-3 rounded-xl border border-[var(--border-color)] shadow-sm">
+                <div className="w-6 h-6 rounded-full border border-[var(--border-color)] shadow-inner flex-shrink-0" style={{backgroundColor: s.colorHex}}></div>
+                <div>
+                  <p className="text-xs font-bold text-[var(--text-main)]">{s.item}</p>
+                  <p className="text-[10px] text-[var(--text-muted)] leading-snug">{s.reason}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto hide-scroll pb-2">
+        {tabs.map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)}
+            className={`px-4 py-1.5 rounded-full whitespace-nowrap text-xs font-bold transition-all border ${filter === f.id ? 'bg-[var(--text-main)] text-[var(--bg-base)] border-[var(--text-main)]' : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'}`}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filteredClothes.length === 0 ? (
+        <div className="text-center py-16 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm">
+          {filter === 'laundry' ? <Droplets className="w-12 h-12 text-blue-400 opacity-50 mx-auto mb-3" /> : <Shirt className="w-12 h-12 text-[var(--text-muted)] opacity-50 mx-auto mb-3" />}
+          <p className="text-[var(--text-muted)] font-bold text-sm">{filter === 'laundry' ? 'لا توجد ملابس في الغسيل' : 'لا توجد قطع هنا'}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {filteredClothes.map(item => {
+            const cat = getCategory(item.type);
+            const dummyItems = { [cat]: item };
+            return (
+              <div key={item.id} className={`bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden group relative transition-all shadow-sm ${item.inLaundry ? 'opacity-80' : 'hover:shadow-md'}`}>
+                <div className="aspect-[4/5] bg-[var(--bg-base)] flex items-center justify-center p-2 relative">
+                  {item.image ? <img src={item.image} className="w-full h-full object-cover rounded-lg" /> : <LiveAvatar items={dummyItems} />}
+                  {item.inLaundry && (
+                    <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+                      <span className="bg-blue-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-lg flex items-center gap-1"><Droplets className="w-3 h-3"/> في الغسيل</span>
+                    </div>
+                  )}
+                  <div className="absolute top-2 left-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <button onClick={() => toggleLaundry(item)} title={item.inLaundry ? 'إخراج من الغسيل' : 'إرسال للغسيل'} className={`p-1.5 rounded-full shadow-md transition-colors ${item.inLaundry ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}>
+                      {item.inLaundry ? <CheckCircle className="w-3 h-3"/> : <Droplets className="w-3 h-3"/>}
+                    </button>
+                    <button onClick={() => setEditingItem(item)} title="تعديل" className="p-1.5 bg-gray-800 text-white rounded-full hover:bg-gray-900 shadow-md">
+                      <Edit3 className="w-3 h-3"/>
+                    </button>
+                    <button onClick={() => handleDelete(item.id)} title="حذف" className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md">
+                      <Trash2 className="w-3 h-3"/>
+                    </button>
+                  </div>
+                </div>
+                <div className="p-2 border-t border-[var(--border-color)]">
+                  <div className="flex justify-between items-center mb-0.5">
+                    <h3 className="font-bold text-[var(--text-main)] text-xs truncate">{translateType(item.type)}</h3>
+                    <div className="w-3 h-3 rounded-full shadow-inner border border-[var(--border-color)] flex-shrink-0" style={{ backgroundColor: item.color }}></div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-[9px] text-[var(--text-muted)] font-bold uppercase">{item.season}</p>
+                    <p className="text-[9px] text-[var(--text-muted)] font-bold">{item.targetGender === 'male' ? 'رجالي' : item.targetGender === 'female' ? 'نسائي' : 'للجنسين'}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {editingItem && (
+        <EditModal item={editingItem} onClose={() => setEditingItem(null)} onSave={handleSaveEdit} getCategory={getCategory} />
+      )}
+    </div>
+  );
+};
+
+const EditModal = ({ item, onClose, onSave, getCategory }) => {
+  const [editedItem, setEditedItem] = useState(item);
+  const category = getCategory(editedItem.type);
+
+  const handleCategoryChange = (newCat) => {
+    setEditedItem({...editedItem, type: ITEM_TYPES[newCat][0].val});
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl w-full max-w-md p-5 shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 left-4 p-1.5 rounded-full bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]"><X className="w-4 h-4"/></button>
+        <h3 className="text-lg font-black text-[var(--text-main)] mb-4">تعديل القطعة</h3>
+        <div className="flex gap-4 mb-4">
+          <div className="w-24 h-32 bg-[var(--bg-base)] border border-[var(--border-color)] rounded-lg flex items-center justify-center p-2 relative overflow-hidden flex-shrink-0">
+            {editedItem.image ? <img src={editedItem.image} className="w-full h-full object-cover rounded" /> : <LiveAvatar items={{ [getCategory(editedItem.type)]: editedItem }} />}
+            <label className="absolute bottom-1 right-1 bg-black/60 text-white p-1.5 rounded-full cursor-pointer hover:bg-black">
+              <ImageIcon className="w-3 h-3" />
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { if(e.target.files[0]) { const img = await processImage(e.target.files[0], 400, false); setEditedItem({...editedItem, image: img}); } }} />
+            </label>
+            {editedItem.image && (
+              <button onClick={() => setEditedItem({...editedItem, image: null})} className="absolute top-1 right-1 bg-red-500/80 text-white p-1 rounded-full hover:bg-red-500"><ImageOff className="w-3 h-3"/></button>
+            )}
+          </div>
+          <div className="flex-1 space-y-3">
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-1">القسم / النوع</label>
+              <div className="flex gap-1">
+                <select value={category} onChange={e => handleCategoryChange(e.target.value)} className="w-1/3 bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2 rounded-lg outline-none focus:border-indigo-500">
+                  <option value="top">علوي</option><option value="bottom">سفلي</option><option value="full">كامل</option><option value="shoes">حذاء</option><option value="accessories">إكسسوار</option>
+                </select>
+                <select value={editedItem.type} onChange={e => setEditedItem({...editedItem, type: e.target.value})} className="flex-1 bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2 rounded-lg outline-none focus:border-indigo-500">
+                  {ITEM_TYPES[category].map(t => <option key={t.val} value={t.val}>{t.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-1">الفئة</label>
+              <select value={editedItem.targetGender || 'unisex'} onChange={e => setEditedItem({...editedItem, targetGender: e.target.value})} className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2 rounded-lg outline-none focus:border-indigo-500">
+                <option value="unisex">للجنسين</option><option value="male">رجالي</option><option value="female">نسائي</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-1">الموسم</label>
+                <select value={editedItem.season} onChange={e => setEditedItem({...editedItem, season: e.target.value})} className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2 rounded-lg outline-none focus:border-indigo-500">
+                  <option value="all">الكل</option><option value="summer">صيفي</option><option value="winter">شتوي</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-1">اللون</label>
+                <div className="w-10 h-[34px] rounded-lg border border-[var(--border-color)] overflow-hidden">
+                  <input type="color" value={editedItem.color} onChange={e => setEditedItem({...editedItem, color: e.target.value})} className="w-full h-full cursor-pointer border-none p-0 bg-transparent"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button onClick={() => onSave(editedItem)} className="w-full bg-indigo-600 text-white font-bold text-sm py-2.5 rounded-lg hover:bg-indigo-700 transition-colors">
+          حفظ التعديلات
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const AddClothingView = ({ profile, user, onAdded }) => {
+  const [mode, setMode] = useState('choose');
+  const [loading, setLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [autoRemoveBg, setAutoRemoveBg] = useState(true);
+  const [analyzedItems, setAnalyzedItems] = useState([]);
+  const [category, setCategory] = useState('top');
+  const [type, setType] = useState('tshirt');
+  const [color, setColor] = useState('#000000');
+  const [season, setSeason] = useState('all');
+  const [targetGender, setTargetGender] = useState('unisex');
+  const showToast = useContext(ToastContext);
+
+  const processFiles = async (files) => {
+    if (!files.length) return;
+    setLoading(true);
+    setAiError('');
+    let results = [];
+    try {
+      for(const file of files) {
+        const base64 = await processImage(file, 400, autoRemoveBg);
+        const aiResults = await analyzeImageWithAI(base64);
+        if (aiResults && aiResults.length > 0) {
+          aiResults.forEach(res => results.push({
+            image: base64,
+            type: res.type || 'tshirt',
+            color: res.color || '#000000',
+            season: res.season || 'all',
+            targetGender: res.targetGender || 'unisex',
+            inLaundry: false
+          }));
+        }
+      }
+      if (results.length > 0) {
+        setAnalyzedItems(results);
+        setMode('ai_review');
+      } else {
+        setAiError('لم يتم التعرف على الملابس. يرجى تجربة الإدخال اليدوي.');
+      }
+    } catch (err) {
+      setAiError('حدث خطأ أثناء التحليل.');
+    }
+    setLoading(false);
+  };
+
+  const handleSmartUpload = (e) => processFiles(Array.from(e.target.files).filter(f => f.type.startsWith('image/')));
+  const handleDragOver = (e) => { e.preventDefault(); if(!loading) setIsDragging(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if(loading) return;
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if(files.length > 0) processFiles(files);
+  };
+
+  const handleSaveAIItems = async () => {
+    setLoading(true);
+    for(const item of analyzedItems) {
+      await setDoc(doc(collection(db, 'artifacts', appId, 'users', user.uid, 'clothes')), { ...item, createdAt: Date.now() });
+    }
+    setLoading(false);
+    showToast('تمت إضافة القطع بنجاح', 'success');
+    onAdded();
+  };
+
+  const removeAiItem = (index) => {
+    const newArr = analyzedItems.filter((_, i) => i !== index);
+    if(newArr.length === 0) setMode('choose');
+    else setAnalyzedItems(newArr);
+  };
+
+  const handleManualSave = async () => {
+    setLoading(true);
+    await setDoc(doc(collection(db, 'artifacts', appId, 'users', user.uid, 'clothes')), {
+      type, color, season, targetGender, inLaundry: false, createdAt: Date.now()
+    });
+    setLoading(false);
+    showToast('تمت الإضافة', 'success');
+    onAdded();
+  };
+
+  useEffect(() => { setType(ITEM_TYPES[category][0].val); }, [category]);
+
+  if (mode === 'choose') {
+    return (
+      <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+        className={`max-w-2xl mx-auto space-y-6 pt-4 p-6 rounded-3xl transition-all border-2 ${isDragging ? 'border-indigo-500 bg-indigo-500/10 border-dashed scale-[1.02]' : 'border-transparent'}`}>
+        <h2 className="text-xl font-black text-[var(--text-main)] text-center mb-4">إضافة قطعة جديدة</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className={`flex flex-col items-center justify-center p-6 bg-[var(--bg-card)] border rounded-2xl transition-all text-center relative overflow-hidden ${loading ? 'opacity-50 cursor-not-allowed border-[var(--border-color)]' : 'hover:border-indigo-500 border-indigo-500/30 shadow-sm'}`}>
+            {loading ? <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-3" /> : <div className="bg-indigo-500/10 p-3 rounded-full mb-3"><Upload className="w-8 h-8 text-indigo-500" /></div>}
+            <h3 className="text-lg font-black text-[var(--text-main)] mb-1">تحليل ذكي (AI)</h3>
+            <p className="text-xs text-[var(--text-muted)] font-bold mb-4">اسحب الصور هنا أو اضغط لرفعها</p>
+            <label className="flex items-center gap-2 mb-4 text-xs font-bold text-[var(--text-muted)] cursor-pointer">
+              <input type="checkbox" checked={autoRemoveBg} onChange={e=>setAutoRemoveBg(e.target.checked)} className="accent-indigo-500 w-4 h-4 rounded" />
+              إزالة الخلفية (تجريبي ✨)
+            </label>
+            <label className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-indigo-700 transition-colors">
+              تحديد الصور
+              <input type="file" accept="image/*" multiple className="hidden" onChange={handleSmartUpload} disabled={loading} />
+            </label>
+          </div>
+          <button onClick={() => setMode('manual')} disabled={loading}
+            className={`flex flex-col items-center justify-center p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl transition-all text-center ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-[var(--hover-bg)] shadow-sm'}`}>
+            <div className="bg-[var(--bg-base)] p-3 rounded-full mb-3 border border-[var(--border-color)]"><Palette className="w-8 h-8 text-[var(--text-muted)]" /></div>
+            <h3 className="text-lg font-black text-[var(--text-main)] mb-1">إدخال يدوي</h3>
+            <p className="text-xs text-[var(--text-muted)] font-bold">حدد التفاصيل يدوياً بدون صور.</p>
+          </button>
+        </div>
+        {aiError && <p className="text-center text-red-500 font-bold text-sm bg-red-500/10 py-2 rounded-lg">{aiError}</p>}
+      </div>
+    );
+  }
+
+  if (mode === 'ai_review') {
+    return (
+      <div className="max-w-3xl mx-auto space-y-4 pt-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-black text-[var(--text-main)]">مراجعة القطع ({analyzedItems.length})</h2>
+          <button onClick={() => setMode('choose')} className="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-main)]">إلغاء</button>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {analyzedItems.map((item, idx) => (
+            <div key={idx} className="bg-[var(--bg-card)] border border-[var(--border-color)] p-3 rounded-xl flex items-start gap-3 shadow-sm">
+              <div className="w-16 h-20 rounded-lg overflow-hidden border border-[var(--border-color)] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZjBmMGYwIi8+CjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmMGYwZjAiLz4KPC9zdmc+')]">
+                <img src={item.image} className="w-full h-full object-contain" />
+              </div>
+              <div className="flex-1 flex flex-col gap-1.5">
+                <div className="flex gap-1">
+                  <select value={item.type} onChange={e => { const arr = [...analyzedItems]; arr[idx].type = e.target.value; setAnalyzedItems(arr); }} className="flex-1 bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs font-bold p-1 rounded outline-none">
+                    {Object.entries(ALL_TYPES_FLAT).map(([val, lbl]) => <option key={val} value={val}>{lbl}</option>)}
+                  </select>
+                  <select value={item.targetGender} onChange={e => { const arr = [...analyzedItems]; arr[idx].targetGender = e.target.value; setAnalyzedItems(arr); }} className="flex-1 bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-[10px] font-bold p-1 rounded outline-none">
+                    <option value="unisex">للجنسين</option><option value="male">رجالي</option><option value="female">نسائي</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input type="color" value={item.color} onChange={e => { const arr = [...analyzedItems]; arr[idx].color = e.target.value; setAnalyzedItems(arr); }} className="w-6 h-6 rounded cursor-pointer border-none p-0 bg-transparent"/>
+                  <select value={item.season} onChange={e => { const arr = [...analyzedItems]; arr[idx].season = e.target.value; setAnalyzedItems(arr); }} className="flex-1 bg-[var(--bg-base)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-1 rounded outline-none">
+                    <option value="all">كل المواسم</option><option value="summer">صيف</option><option value="winter">شتاء</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={() => removeAiItem(idx)} className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+            </div>
+          ))}
+        </div>
+        <button onClick={handleSaveAIItems} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl flex justify-center items-center gap-2 mt-4 transition-all">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4"/> حفظ الكل بالخزانة</>}
+        </button>
+      </div>
+    );
+  }
+
+  // mode === 'manual'
+  return (
+    <div className="max-w-3xl mx-auto pt-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-black text-[var(--text-main)]">إدخال يدوي</h2>
+        <button onClick={() => setMode('choose')} className="p-1.5 bg-[var(--bg-card)] rounded-full text-[var(--text-muted)] border border-[var(--border-color)] hover:bg-[var(--hover-bg)]"><X className="w-4 h-4"/></button>
+      </div>
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full md:w-1/3 max-w-[200px] mx-auto bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-4 flex items-center justify-center aspect-[3/4] shadow-sm">
+          <LiveAvatar items={{ [category]: { type, color } }} />
+        </div>
+        <div className="flex-1 space-y-4">
+          <div>
+            <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2">1. القسم</label>
+            <div className="flex gap-2">
+              {[ {id: 'top', label: 'علوي'}, {id: 'bottom', label: 'سفلي'}, {id: 'full', label: 'كامل'}, {id: 'shoes', label: 'حذاء'}, {id: 'accessories', label: 'إكسسوار'} ].map(c => (
+                <button key={c.id} onClick={() => setCategory(c.id)} className={`flex-1 py-2 rounded-lg font-bold text-xs border transition-colors ${category === c.id ? 'bg-[var(--text-main)] text-[var(--bg-base)] border-[var(--text-main)]' : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'}`}>{c.label}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2">2. النوع</label>
+            <div className="flex flex-wrap gap-2">
+              {ITEM_TYPES[category].map(t => (
+                <button key={t.val} onClick={() => setType(t.val)} className={`px-3 py-1.5 rounded-lg font-bold text-xs border transition-colors ${type === t.val ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-main)] hover:bg-[var(--hover-bg)]'}`}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2">الفئة</label>
+              <select value={targetGender} onChange={e => setTargetGender(e.target.value)} className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2.5 rounded-lg outline-none focus:border-indigo-500">
+                <option value="unisex">للجنسين</option><option value="male">رجالي</option><option value="female">نسائي</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2">الموسم</label>
+              <select value={season} onChange={e => setSeason(e.target.value)} className="w-full bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-xs p-2.5 rounded-lg outline-none focus:border-indigo-500">
+                <option value="all">كل المواسم</option><option value="summer">صيفي</option><option value="winter">شتوي</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2">3. اللون</label>
+            <div className="flex flex-wrap gap-2 items-center">
+              {QUICK_COLORS.map(c => (
+                <button key={c} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 transition-transform ${color === c ? 'border-indigo-600 scale-110' : 'border-[var(--border-color)] hover:scale-105'}`} style={{backgroundColor: c}}></button>
+              ))}
+              <div className="relative w-8 h-8 rounded-full border border-dashed border-[var(--text-muted)] overflow-hidden flex items-center justify-center bg-[var(--bg-base)]">
+                <Palette className="w-4 h-4 text-[var(--text-muted)] absolute pointer-events-none" />
+                <input type="color" value={color} onChange={e => setColor(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              </div>
+            </div>
+          </div>
+          <button onClick={handleManualSave} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl flex justify-center items-center gap-2 mt-4 transition-all">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4"/> إضافة للخزانة</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FavoritesView = ({ favorites, clothes, user }) => {
+  const [captionLoading, setCaptionLoading] = useState(null);
+  const [generatedCaption, setGeneratedCaption] = useState(null);
+  const showToast = useContext(ToastContext);
+  const confirm = useContext(ConfirmContext);
+
+  const handleDelete = async (id) => {
+    confirm('هل أنت متأكد من حذف هذا التنسيق؟', async () => {
+      await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', id));
+      showToast('تم الحذف', 'success');
+    });
+  };
+
+  const handleGenerateCaption = async (fav) => {
+    setCaptionLoading(fav.id);
+    const top = clothes.find(c => c.id === fav.outfit.topId);
+    const bottom = clothes.find(c => c.id === fav.outfit.bottomId);
+    const shoes = clothes.find(c => c.id === fav.outfit.shoesId);
+    const acc = clothes.find(c => c.id === fav.outfit.accessoryId);
+    const itemsDesc = [top, bottom, shoes, acc]
+      .filter(Boolean)
+      .map(i => `${translateType(i.type)} (لون ${i.color})`)
+      .join(' و ');
+    const result = await generateCaptionWithAI(itemsDesc);
+    if (result && result.caption) {
+      setGeneratedCaption(result.caption);
+    }
+    setCaptionLoading(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-black text-[var(--text-main)]">المفضلات</h2>
+      {favorites.length === 0 ? (
+        <div className="text-center py-16 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-sm">
+          <Bookmark className="w-12 h-12 text-[var(--text-muted)] opacity-50 mx-auto mb-3" />
+          <p className="text-[var(--text-muted)] font-bold text-sm">لا توجد تنسيقات محفوظة</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-4">
+          {favorites.map(fav => (
+            <div key={fav.id} className="relative group flex flex-col">
+              <div className="relative">
+                <OutfitCard outfit={fav.outfit} clothes={clothes} />
+                <button onClick={() => handleDelete(fav.id)} className="absolute top-2 left-2 p-1.5 bg-red-500/90 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                  <Trash2 className="w-3 h-3"/>
+                </button>
+              </div>
+              <button onClick={() => handleGenerateCaption(fav)} disabled={captionLoading === fav.id}
+                className="mt-2 w-full text-xs font-bold bg-[var(--bg-card)] text-indigo-500 py-2 rounded-lg hover:bg-indigo-500/10 transition-colors flex items-center justify-center gap-1.5 border border-[var(--border-color)] shadow-sm">
+                {captionLoading === fav.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                توليد كابشن للصورة ✨
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {generatedCaption && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl w-full max-w-sm p-6 shadow-2xl relative animate-in zoom-in">
+            <button onClick={() => setGeneratedCaption(null)} className="absolute top-4 left-4 p-1 rounded-full text-[var(--text-muted)] hover:bg-[var(--bg-base)]"><X className="w-4 h-4"/></button>
+            <h3 className="text-lg font-black text-[var(--text-main)] mb-4 text-center flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-500"/> الكابشن المقترح
+            </h3>
+            <div className="bg-[var(--bg-base)] p-4 rounded-xl border border-[var(--border-color)] text-sm font-bold leading-relaxed whitespace-pre-wrap text-[var(--text-main)]">
+              {generatedCaption}
+            </div>
+            <button onClick={() => { copyToClipboard(generatedCaption, showToast); setGeneratedCaption(null); }}
+              className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors">
+              <Copy className="w-4 h-4"/> نسخ النص
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ProfileModal = ({ user, profile, setProfile, onClose, clothes, favorites }) => {
+  const [name, setName] = useState(profile.name);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+  const showToast = useContext(ToastContext);
+
+  const handleSave = async () => {
+    setLoading(true);
+    setProfile(p => ({...p, name}));
+    if(!user.isAnonymous) {
+      await updateProfile(user, { displayName: name });
+    }
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings'), { name }, { merge: true });
+    setLoading(false);
+    showToast('تم حفظ الملف الشخصي', 'success');
+    onClose();
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0]; if(!file) return;
+    const base64 = await processImage(file, 200, false);
+    setProfile(p => ({...p, photo: base64}));
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings'), { photo: base64 }, { merge: true });
+    showToast('تم تحديث الصورة', 'success');
+  };
+
+  const handleExport = () => {
+    const data = { clothes, favorites };
+    const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `dolaby_${name || 'User'}.json`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('تم تصدير البيانات', 'success');
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if(data.clothes) {
+          for(const c of data.clothes) {
+            await setDoc(doc(collection(db, 'artifacts', appId, 'users', user.uid, 'clothes')), c);
+          }
+        }
+        if(data.favorites) {
+          for(const f of data.favorites) {
+            await setDoc(doc(collection(db, 'artifacts', appId, 'users', user.uid, 'favorites')), f);
+          }
+        }
+        setMsg("تم استيراد البيانات بنجاح!");
+        setTimeout(() => setMsg(''), 3000);
+        showToast('تم الاستيراد', 'success');
+      } catch(err) {
+        setMsg("ملف غير صالح!");
+        setTimeout(() => setMsg(''), 3000);
+        showToast('فشل الاستيراد', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl w-full max-w-sm p-5 shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 left-4 p-1.5 rounded-full bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)]"><X className="w-4 h-4"/></button>
+        <h3 className="text-lg font-black text-[var(--text-main)] mb-4 text-center">الملف الشخصي</h3>
+        {msg && <div className="text-center text-xs font-bold text-green-500 bg-green-500/10 py-2 rounded-lg mb-4">{msg}</div>}
+        <div className="flex flex-col items-center mb-6">
+          <label className="relative cursor-pointer group">
+            {profile.photo ? <img src={profile.photo} className="w-20 h-20 rounded-full object-cover border-2 border-[var(--border-color)] shadow-sm" /> : <div className="w-20 h-20 rounded-full bg-[var(--bg-base)] flex items-center justify-center border-2 border-[var(--border-color)]"><UserCircle className="w-10 h-10 text-[var(--text-muted)]" /></div>}
+            <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><ImageIcon className="w-5 h-5 text-white"/></div>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </label>
+          <p className="text-xs text-[var(--text-muted)] mt-2">{user.email || 'حساب ضيف'}</p>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-bold text-[var(--text-muted)] mb-1">الاسم</label>
+            <input type="text" value={name} onChange={e=>setName(e.target.value)} className="w-full bg-[var(--bg-base)] border border-[var(--border-color)] px-3 py-2 rounded-lg text-sm text-[var(--text-main)] outline-none focus:border-indigo-500" />
+          </div>
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-color)]">
+            <button onClick={handleExport} className="flex-1 py-2 bg-[var(--bg-base)] border border-[var(--border-color)] rounded-lg text-xs font-bold text-[var(--text-main)] flex items-center justify-center gap-1 hover:bg-[var(--hover-bg)]">
+              <DownloadCloud className="w-4 h-4"/> تصدير
+            </button>
+            <label className="flex-1 py-2 bg-[var(--bg-base)] border border-[var(--border-color)] rounded-lg text-xs font-bold text-[var(--text-main)] flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--hover-bg)]">
+              <UploadCloud className="w-4 h-4"/> استيراد
+              <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+            </label>
+          </div>
+          <button onClick={handleSave} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2.5 rounded-lg transition-colors">
+            {loading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+          </button>
+          <button onClick={() => signOut(auth)} className="w-full text-red-500 font-bold text-sm py-2 flex justify-center gap-1 items-center bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors">
+            <LogOut className="w-4 h-4"/> تسجيل الخروج
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 // ==========================================
 // المكون الرئيسي App
@@ -507,14 +1129,14 @@ const App = () => {
                 </div>
               </div>
               <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
-                <div className="animate-in">
-                  {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
-                  {/* باقي الأقسام ستضاف هنا بنفس الطريقة */}
-                </div>
-              </main>
-              {showProfile && <div>ProfileModal</div>}
-            </div>
-          )}
+  <div className="animate-in">
+    {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
+    {activeTab === 'closet' && <ClosetView clothes={clothes} profile={profile} user={user} />}
+    {activeTab === 'add' && <AddClothingView user={user} onAdded={() => setActiveTab('closet')} />}
+    {activeTab === 'favorites' && <FavoritesView favorites={favorites} clothes={clothes} user={user} />}
+  </div>
+</main>
+            {showProfile && <ProfileModal user={user} profile={profile} setProfile={setProfile} onClose={() => setShowProfile(false)} clothes={clothes} favorites={favorites} />}
           {toast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 toast-slide">{toast.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{toast.message}</div>}
           {confirmState.open && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
