@@ -274,7 +274,14 @@ const OutfitCard = ({ outfit, clothes }) => {
 };
 
 const NavButton = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`flex lg:flex-row flex-col items-center gap-1 lg:gap-3 p-2 lg:p-3 lg:w-full rounded-xl transition-all ${active ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 shadow-sm' : 'text-[var(--text-muted)] hover:bg-[var(--hover-bg)]'}`}>
+  <button
+    onClick={onClick}
+    className={`flex lg:flex-row flex-col items-center gap-1 lg:gap-3 p-2 lg:p-3 lg:w-full rounded-xl transition-all duration-200 ${
+      active
+        ? 'bg-white/20 dark:bg-white/10 text-indigo-600 dark:text-indigo-400 shadow-md backdrop-blur-sm'
+        : 'text-[var(--text-muted)] hover:bg-white/10 dark:hover:bg-white/5 hover:scale-105'
+    }`}
+  >
     <div className={`${active ? 'scale-110' : 'scale-100'} transition-transform`}>{icon}</div>
     <span className="text-[10px] lg:text-xs font-bold">{label}</span>
   </button>
@@ -1161,46 +1168,50 @@ const App = () => {
 
 
             {!user ? <AuthScreen /> : (
-              <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
-                <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-[var(--bg-card)] md:border-l border-t border-[var(--border-color)] z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-sm">
-                  <div className="hidden md:flex items-center justify-center lg:justify-start gap-2 mb-8 w-full lg:px-4 text-indigo-600">
-                    <DolabyLogo className="w-7 h-7" />
-                    <h1 className="text-xl font-black hidden lg:block text-[var(--text-main)]">dolaby</h1>
-                  </div>
-                  <div className="flex md:flex-col w-full justify-between md:justify-start gap-1 lg:gap-2 flex-1">
-                    <NavButton icon={<Home />} label="المساعد" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                    <NavButton icon={<Shirt />} label="الخزانة" active={activeTab === 'closet'} onClick={() => setActiveTab('closet')} />
-                    <NavButton icon={<PlusCircle />} label="إضافة" active={activeTab === 'add'} onClick={() => setActiveTab('add')} />
-                    <NavButton icon={<Bookmark />} label="المفضلات" active={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')} />
-                  </div>
-                  <div className="hidden md:flex flex-col w-full gap-2 mt-auto pt-4 border-t border-[var(--border-color)] lg:px-2">
-                    <button onClick={() => setIsDark(!isDark)} className="flex items-center justify-center lg:justify-between p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full border border-[var(--border-color)]">
-                      <span className="flex items-center gap-2">{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}<span className="hidden lg:block text-xs font-bold">{isDark ? 'داكن' : 'فاتح'}</span></span>
-                      <div className={`hidden lg:flex w-8 h-4 rounded-full items-center p-0.5 transition-colors ${isDark ? 'bg-indigo-600' : 'bg-[var(--border-color)]'}`}><div className={`w-3 h-3 rounded-full bg-white transition-transform ${isDark ? 'translate-x-0' : '-translate-x-3.5'}`}></div></div>
-                    </button>
-                    <button onClick={() => setShowProfile(true)} className="flex items-center gap-2 p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full justify-center lg:justify-start border border-transparent">
-                      {profile.photo ? <img src={profile.photo} className="w-6 h-6 rounded-full object-cover" /> : <UserCircle className="w-5 h-5" />}
-                      <span className="text-sm font-bold hidden lg:block truncate">{profile.name}</span>
-                    </button>
-                  </div>
-                </nav>
-                <div className="md:hidden flex justify-between items-center p-4 bg-[var(--bg-card)] border-b border-[var(--border-color)] sticky top-0 z-30">
-                  <div className="flex items-center gap-2 text-indigo-600"><DolabyLogo className="w-6 h-6" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setIsDark(!isDark)}>{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}</button>
-                    <button onClick={() => setShowProfile(true)}>{profile.photo ? <img src={profile.photo} className="w-7 h-7 rounded-full object-cover" /> : <UserCircle className="w-6 h-6 text-[var(--text-muted)]" />}</button>
-                  </div>
-                </div>
-                <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
-                  <div className="animate-in">
-                    {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
-                    {activeTab === 'closet' && <ClosetView clothes={clothes} profile={profile} user={user} />}
-                    {activeTab === 'add' && <AddClothingView user={user} onAdded={() => setActiveTab('closet')} />}
-                    {activeTab === 'favorites' && <FavoritesView favorites={favorites} clothes={clothes} user={user} />}
-                  </div>
-                </main>
-                {showProfile && <ProfileModal user={user} profile={profile} setProfile={setProfile} onClose={() => setShowProfile(false)} clothes={clothes} favorites={favorites} />}
-              </div>
+             <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
+  {/* شريط التنقل السفلي (موبايل) والجانبي (تابلت/ديسكتوب) */}
+  <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-white/70 dark:bg-black/50 backdrop-blur-xl border-t md:border-l border-white/20 dark:border-white/10 z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-2xl">
+    <div className="hidden md:flex items-center justify-center lg:justify-start gap-2 mb-8 w-full lg:px-4 text-indigo-600">
+      <DolabyLogo className="w-7 h-7" />
+      <h1 className="text-xl font-black hidden lg:block text-[var(--text-main)] drop-shadow-sm">dolaby</h1>
+    </div>
+    <div className="flex md:flex-col w-full justify-between md:justify-start gap-1 lg:gap-2 flex-1">
+      <NavButton icon={<Home />} label="المساعد" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+      <NavButton icon={<Shirt />} label="الخزانة" active={activeTab === 'closet'} onClick={() => setActiveTab('closet')} />
+      <NavButton icon={<PlusCircle />} label="إضافة" active={activeTab === 'add'} onClick={() => setActiveTab('add')} />
+      <NavButton icon={<Bookmark />} label="المفضلات" active={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')} />
+    </div>
+    <div className="hidden md:flex flex-col w-full gap-2 mt-auto pt-4 border-t border-white/20 dark:border-white/10 lg:px-2">
+      <button onClick={() => setIsDark(!isDark)} className="flex items-center justify-center lg:justify-between p-2 rounded-lg text-[var(--text-muted)] hover:bg-white/10 dark:hover:bg-white/5 transition-colors w-full border border-white/20 dark:border-white/10 backdrop-blur-sm">
+        <span className="flex items-center gap-2">{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}<span className="hidden lg:block text-xs font-bold">{isDark ? 'داكن' : 'فاتح'}</span></span>
+        <div className={`hidden lg:flex w-8 h-4 rounded-full items-center p-0.5 transition-colors ${isDark ? 'bg-indigo-600' : 'bg-gray-300'}`}><div className={`w-3 h-3 rounded-full bg-white transition-transform ${isDark ? 'translate-x-0' : '-translate-x-3.5'}`}></div></div>
+      </button>
+      <button onClick={() => setShowProfile(true)} className="flex items-center gap-2 p-2 rounded-lg text-[var(--text-muted)] hover:bg-white/10 dark:hover:bg-white/5 transition-colors w-full justify-center lg:justify-start border border-transparent">
+        {profile.photo ? <img src={profile.photo} className="w-6 h-6 rounded-full object-cover" /> : <UserCircle className="w-5 h-5" />}
+        <span className="text-sm font-bold hidden lg:block truncate">{profile.name}</span>
+      </button>
+    </div>
+  </nav>
+
+  {/* باقي محتوى الصفحة (الهيدر العلوي في الموبايل) */}
+  <div className="md:hidden flex justify-between items-center p-4 bg-white/70 dark:bg-black/50 backdrop-blur-xl border-b border-white/20 dark:border-white/10 sticky top-0 z-30 shadow-sm">
+    <div className="flex items-center gap-2 text-indigo-600"><DolabyLogo className="w-6 h-6" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
+    <div className="flex items-center gap-3">
+      <button onClick={() => setIsDark(!isDark)}>{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}</button>
+      <button onClick={() => setShowProfile(true)}>{profile.photo ? <img src={profile.photo} className="w-7 h-7 rounded-full object-cover" /> : <UserCircle className="w-6 h-6 text-[var(--text-muted)]" />}</button>
+    </div>
+  </div>
+
+  <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
+    <div className="animate-in">
+      {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
+      {activeTab === 'closet' && <ClosetView clothes={clothes} profile={profile} user={user} />}
+      {activeTab === 'add' && <AddClothingView user={user} onAdded={() => setActiveTab('closet')} />}
+      {activeTab === 'favorites' && <FavoritesView favorites={favorites} clothes={clothes} user={user} />}
+    </div>
+  </main>
+  {showProfile && <ProfileModal user={user} profile={profile} setProfile={setProfile} onClose={() => setShowProfile(false)} clothes={clothes} favorites={favorites} />}
+</div>
             )}
             {toast && (
               <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 toast-slide">
