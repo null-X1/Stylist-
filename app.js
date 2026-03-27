@@ -280,20 +280,6 @@ const NavButton = ({ icon, label, active, onClick }) => (
   </button>
 );
 
-// مكون الشعار الخاص بتطبيق دولابي
-const DolabyLogo = ({ className = "w-6 h-6" }) => (
-  <svg className={className} viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M128 48C108 48 96 62 96 80C96 95 106 105 116 112C125 118 128 128 128 138V152M128 152L40 208H216L128 152Z" stroke="url(#logo-grad)" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M200 64C200 64 204 84 224 84C204 84 200 104 200 104C200 104 196 84 176 84C196 84 200 64 200 64Z" fill="#FBBF24"/>
-    <path d="M64 100C64 100 66 112 78 112C66 112 64 124 64 124C64 124 62 112 50 112C62 112 64 100 64 100Z" fill="#FCD34D"/>
-    <defs>
-      <linearGradient id="logo-grad" x1="40" y1="48" x2="216" y2="208" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#6366F1"/>
-        <stop offset="1" stopColor="#A855F7"/>
-      </linearGradient>
-    </defs>
-  </svg>
-);
 
 
 
