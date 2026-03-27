@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef, createContext, useContext 
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 import { Home, Shirt, PlusCircle, Sparkles, LogOut, Trash2, Loader2, CheckCircle, Bookmark, X, Palette, Moon, Sun, UserCircle, UploadCloud, DownloadCloud, Image as ImageIcon, Upload, Droplets, Edit3, ImageOff, Copy, Check, AlertCircle, Heart, RefreshCw, Send } from 'https://esm.sh/lucide-react@0.344.0';
@@ -268,7 +268,7 @@ const AuthScreen = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const showToast = () => {}; // سنضيف السياق لاحقاً، لكن سنتركها مؤقتاً
+  const showToast = useContext(ToastContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -277,12 +277,15 @@ const AuthScreen = () => {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
+        showToast('تم تسجيل الدخول', 'success');
       } else {
         const res = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(res.user, { displayName: name });
+        showToast('تم إنشاء الحساب', 'success');
       }
     } catch (err) {
       setError("تأكد من صحة البيانات أو أن الحساب موجود.");
+      showToast('فشل تسجيل الدخول', 'error');
     }
     setLoading(false);
   };
@@ -290,7 +293,10 @@ const AuthScreen = () => {
   const handleGoogle = async () => {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch(err) {}
+      showToast('تم تسجيل الدخول بـ Google', 'success');
+    } catch(err) {
+      showToast('فشل تسجيل الدخول', 'error');
+    }
   };
 
   return (
@@ -325,16 +331,14 @@ const AuthScreen = () => {
 };
 
 // ==========================================
-// المكونات الرئيسية (المساعد، الخزانة، الإضافة، المفضلات، الملف الشخصي)
+// المكونات الرئيسية
 // ==========================================
-// ... (سيتم وضع الكود الكامل لهذه المكونات، لكن نظراً لطول الإجابة، سأضع هنا المكون DashboardView كمثال مع الإشارة إلى أن باقي المكونات مشابهة للكود الأصلي)
-
 const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([{ role: 'model', text: 'أهلاً بك! أنا ستايليست الخاص بك. ماذا نرتدي اليوم؟', outfit: null, quickReplies: ["للعمل", "خروج كاجوال", "مناسبة ليلية"] }]);
   const chatEndRef = useRef(null);
-  const showToast = () => {}; // سيتم استبداله بالسياق
+  const showToast = useContext(ToastContext);
 
   useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages]);
 
@@ -342,6 +346,7 @@ const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
     const newGender = profile.gender === 'male' ? 'female' : 'male';
     setProfile(p => ({...p, gender: newGender}));
     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings'), { gender: newGender }, { merge: true });
+    showToast(`تم التبديل إلى ${newGender === 'male' ? 'رجالي' : 'نسائي'}`, 'success');
   };
 
   const handleSend = async (txt = null) => {
@@ -370,6 +375,7 @@ const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
 
   const saveOutfit = async (outfit) => {
     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', `outfit_${Date.now()}`), { outfit, createdAt: Date.now() });
+    showToast('تم حفظ التنسيق في المفضلات', 'success');
   };
 
   return (
@@ -1041,6 +1047,11 @@ const ProfileModal = ({ user, profile, setProfile, onClose, clothes, favorites }
   );
 };
 
+// ==========================================
+// السياقات
+// ==========================================
+export const ToastContext = createContext();
+export const ConfirmContext = createContext();
 
 // ==========================================
 // المكون الرئيسي App
@@ -1095,64 +1106,70 @@ const App = () => {
   return (
     <ToastContext.Provider value={showToast}>
       <ConfirmContext.Provider value={confirm}>
-        
-<React.Fragment>
-       <style>{`:root { ${themeVariables} }`}</style>
-        <div className="min-h-[100dvh] w-full bg-[var(--bg-base)] text-[var(--text-main)] transition-colors">
-          {!user ? <AuthScreen /> : (
-            <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
-              <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-[var(--bg-card)] md:border-l border-t border-[var(--border-color)] z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-sm">
-                <div className="hidden md:flex items-center justify-center lg:justify-start gap-2 mb-8 w-full lg:px-4 text-indigo-600">
-                  <Sparkles className="w-6 h-6" />
-                  <h1 className="text-xl font-black hidden lg:block text-[var(--text-main)]">dolaby</h1>
+        <React.Fragment>
+          <style>{`:root { ${themeVariables} }`}</style>
+          <div className="min-h-[100dvh] w-full bg-[var(--bg-base)] text-[var(--text-main)] transition-colors">
+            {!user ? <AuthScreen /> : (
+              <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
+                <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-[var(--bg-card)] md:border-l border-t border-[var(--border-color)] z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-sm">
+                  <div className="hidden md:flex items-center justify-center lg:justify-start gap-2 mb-8 w-full lg:px-4 text-indigo-600">
+                    <Sparkles className="w-6 h-6" />
+                    <h1 className="text-xl font-black hidden lg:block text-[var(--text-main)]">dolaby</h1>
+                  </div>
+                  <div className="flex md:flex-col w-full justify-between md:justify-start gap-1 lg:gap-2 flex-1">
+                    <NavButton icon={<Home />} label="المساعد" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+                    <NavButton icon={<Shirt />} label="الخزانة" active={activeTab === 'closet'} onClick={() => setActiveTab('closet')} />
+                    <NavButton icon={<PlusCircle />} label="إضافة" active={activeTab === 'add'} onClick={() => setActiveTab('add')} />
+                    <NavButton icon={<Bookmark />} label="المفضلات" active={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')} />
+                  </div>
+                  <div className="hidden md:flex flex-col w-full gap-2 mt-auto pt-4 border-t border-[var(--border-color)] lg:px-2">
+                    <button onClick={() => setIsDark(!isDark)} className="flex items-center justify-center lg:justify-between p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full border border-[var(--border-color)]">
+                      <span className="flex items-center gap-2">{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}<span className="hidden lg:block text-xs font-bold">{isDark ? 'داكن' : 'فاتح'}</span></span>
+                      <div className={`hidden lg:flex w-8 h-4 rounded-full items-center p-0.5 transition-colors ${isDark ? 'bg-indigo-600' : 'bg-[var(--border-color)]'}`}><div className={`w-3 h-3 rounded-full bg-white transition-transform ${isDark ? 'translate-x-0' : '-translate-x-3.5'}`}></div></div>
+                    </button>
+                    <button onClick={() => setShowProfile(true)} className="flex items-center gap-2 p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full justify-center lg:justify-start border border-transparent">
+                      {profile.photo ? <img src={profile.photo} className="w-6 h-6 rounded-full object-cover" /> : <UserCircle className="w-5 h-5" />}
+                      <span className="text-sm font-bold hidden lg:block truncate">{profile.name}</span>
+                    </button>
+                  </div>
+                </nav>
+                <div className="md:hidden flex justify-between items-center p-4 bg-[var(--bg-card)] border-b border-[var(--border-color)] sticky top-0 z-30">
+                  <div className="flex items-center gap-2 text-indigo-600"><Sparkles className="w-5 h-5" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setIsDark(!isDark)}>{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}</button>
+                    <button onClick={() => setShowProfile(true)}>{profile.photo ? <img src={profile.photo} className="w-7 h-7 rounded-full object-cover" /> : <UserCircle className="w-6 h-6 text-[var(--text-muted)]" />}</button>
+                  </div>
                 </div>
-                <div className="flex md:flex-col w-full justify-between md:justify-start gap-1 lg:gap-2 flex-1">
-                  <NavButton icon={<Home />} label="المساعد" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-                  <NavButton icon={<Shirt />} label="الخزانة" active={activeTab === 'closet'} onClick={() => setActiveTab('closet')} />
-                  <NavButton icon={<PlusCircle />} label="إضافة" active={activeTab === 'add'} onClick={() => setActiveTab('add')} />
-                  <NavButton icon={<Bookmark />} label="المفضلات" active={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')} />
-                </div>
-                <div className="hidden md:flex flex-col w-full gap-2 mt-auto pt-4 border-t border-[var(--border-color)] lg:px-2">
-                  <button onClick={() => setIsDark(!isDark)} className="flex items-center justify-center lg:justify-between p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full border border-[var(--border-color)]">
-                    <span className="flex items-center gap-2">{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}<span className="hidden lg:block text-xs font-bold">{isDark ? 'داكن' : 'فاتح'}</span></span>
-                    <div className={`hidden lg:flex w-8 h-4 rounded-full items-center p-0.5 transition-colors ${isDark ? 'bg-indigo-600' : 'bg-[var(--border-color)]'}`}><div className={`w-3 h-3 rounded-full bg-white transition-transform ${isDark ? 'translate-x-0' : '-translate-x-3.5'}`}></div></div>
-                  </button>
-                  <button onClick={() => setShowProfile(true)} className="flex items-center gap-2 p-2 rounded-lg text-[var(--text-muted)] hover:bg-[var(--hover-bg)] transition-colors w-full justify-center lg:justify-start border border-transparent">
-                    {profile.photo ? <img src={profile.photo} className="w-6 h-6 rounded-full object-cover" /> : <UserCircle className="w-5 h-5" />}
-                    <span className="text-sm font-bold hidden lg:block truncate">{profile.name}</span>
-                  </button>
-                </div>
-              </nav>
-              <div className="md:hidden flex justify-between items-center p-4 bg-[var(--bg-card)] border-b border-[var(--border-color)] sticky top-0 z-30">
-                <div className="flex items-center gap-2 text-indigo-600"><Sparkles className="w-5 h-5" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setIsDark(!isDark)}>{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}</button>
-                  <button onClick={() => setShowProfile(true)}>{profile.photo ? <img src={profile.photo} className="w-7 h-7 rounded-full object-cover" /> : <UserCircle className="w-6 h-6 text-[var(--text-muted)]" />}</button>
+                <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
+                  <div className="animate-in">
+                    {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
+                    {activeTab === 'closet' && <ClosetView clothes={clothes} profile={profile} user={user} />}
+                    {activeTab === 'add' && <AddClothingView user={user} onAdded={() => setActiveTab('closet')} />}
+                    {activeTab === 'favorites' && <FavoritesView favorites={favorites} clothes={clothes} user={user} />}
+                  </div>
+                </main>
+                {showProfile && <ProfileModal user={user} profile={profile} setProfile={setProfile} onClose={() => setShowProfile(false)} clothes={clothes} favorites={favorites} />}
+              </div>
+            )}
+            {toast && (
+              <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 toast-slide">
+                {toast.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {toast.message}
+              </div>
+            )}
+            {confirmState.open && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full shadow-xl border border-[var(--border-color)]">
+                  <p className="text-[var(--text-main)] font-bold mb-6 text-center">{confirmState.message}</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => setConfirmState({ open: false, message: '', onConfirm: null })} className="flex-1 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] font-bold">إلغاء</button>
+                    <button onClick={() => { confirmState.onConfirm?.(); setConfirmState({ open: false, message: '', onConfirm: null }); }} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-bold">تأكيد</button>
+                  </div>
                 </div>
               </div>
-              <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
-  <div className="animate-in">
-    {activeTab === 'dashboard' && <DashboardView clothes={clothes} profile={profile} setProfile={setProfile} user={user} favorites={favorites} />}
-    {activeTab === 'closet' && <ClosetView clothes={clothes} profile={profile} user={user} />}
-    {activeTab === 'add' && <AddClothingView user={user} onAdded={() => setActiveTab('closet')} />}
-    {activeTab === 'favorites' && <FavoritesView favorites={favorites} clothes={clothes} user={user} />}
-  </div>
-</main>
-            {showProfile && <ProfileModal user={user} profile={profile} setProfile={setProfile} onClose={() => setShowProfile(false)} clothes={clothes} favorites={favorites} />}
-          {toast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 toast-slide">{toast.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}{toast.message}</div>}
-          {confirmState.open && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full shadow-xl border border-[var(--border-color)]">
-                <p className="text-[var(--text-main)] font-bold mb-6 text-center">{confirmState.message}</p>
-                <div className="flex gap-3">
-                  <button onClick={() => setConfirmState({ open: false, message: '', onConfirm: null })} className="flex-1 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-muted)] font-bold">إلغاء</button>
-                  <button onClick={() => { confirmState.onConfirm?.(); setConfirmState({ open: false, message: '', onConfirm: null }); }} className="flex-1 py-2 rounded-lg bg-red-600 text-white font-bold">تأكيد</button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-</React.Fragment>
+            )}
+          </div>
+        </React.Fragment>
       </ConfirmContext.Provider>
     </ToastContext.Provider>
   );
@@ -1163,7 +1180,3 @@ const App = () => {
 // ==========================================
 const root = createRoot(document.getElementById('root'));
 root.render(<App />);
-
-// تصدير السياقات للاستخدام في باقي المكونات (يمكن إضافتها عند الحاجة)
-export const ToastContext = createContext();
-export const ConfirmContext = createContext();
