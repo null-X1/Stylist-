@@ -183,6 +183,22 @@ const ALL_TYPES_FLAT = Object.values(ITEM_TYPES).flat().reduce((acc, curr) => ({
 const translateType = (type) => ALL_TYPES_FLAT[type] || type;
 const QUICK_COLORS = ['#ffffff', '#000000', '#9ca3af', '#1e3a8a', '#b91c1c', '#f59e0b', '#166534', '#fdf6e3', '#ec4899', '#8b5cf6'];
 
+// مكون شعار دولابي الجديد
+const DolabyLogo = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M128 48C108 48 96 62 96 80C96 95 106 105 116 112C125 118 128 128 128 138V152M128 152L40 208H216L128 152Z" stroke="url(#logo-grad)" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M200 64C200 64 204 84 224 84C204 84 200 104 200 104C200 104 196 84 176 84C196 84 200 64 200 64Z" fill="#FBBF24"/>
+    <path d="M64 100C64 100 66 112 78 112C66 112 64 124 64 124C64 124 62 112 50 112C62 112 64 100 64 100Z" fill="#FCD34D"/>
+    <defs>
+      <linearGradient id="logo-grad" x1="40" y1="48" x2="216" y2="208" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#6366F1"/>
+        <stop offset="1" stopColor="#A855F7"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+
 const LiveAvatar = ({ items }) => {
   const top = items.top || items.full;
   const bottom = items.bottom;
@@ -264,6 +280,23 @@ const NavButton = ({ icon, label, active, onClick }) => (
   </button>
 );
 
+// مكون الشعار الخاص بتطبيق دولابي
+const DolabyLogo = ({ className = "w-6 h-6" }) => (
+  <svg className={className} viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M128 48C108 48 96 62 96 80C96 95 106 105 116 112C125 118 128 128 128 138V152M128 152L40 208H216L128 152Z" stroke="url(#logo-grad)" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M200 64C200 64 204 84 224 84C204 84 200 104 200 104C200 104 196 84 176 84C196 84 200 64 200 64Z" fill="#FBBF24"/>
+    <path d="M64 100C64 100 66 112 78 112C66 112 64 124 64 124C64 124 62 112 50 112C62 112 64 100 64 100Z" fill="#FCD34D"/>
+    <defs>
+      <linearGradient id="logo-grad" x1="40" y1="48" x2="216" y2="208" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#6366F1"/>
+        <stop offset="1" stopColor="#A855F7"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+
+
 // ==========================================
 // شاشة تسجيل الدخول
 // ==========================================
@@ -309,7 +342,7 @@ const AuthScreen = () => {
     <div className="flex items-center justify-center p-4 min-h-screen w-full">
       <div className="bg-[var(--bg-card)] p-6 md:p-8 rounded-3xl shadow-xl w-full max-w-sm border border-[var(--border-color)]">
         <div className="text-center mb-6">
-          <div className="inline-flex bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-2xl text-indigo-600 mb-3"><Sparkles className="w-6 h-6" /></div>
+          <div className="inline-flex bg-indigo-50 dark:bg-indigo-500/10 p-3 rounded-2xl text-indigo-600 mb-3"><DolabyLogo className="w-8 h-8" /></div>
           <h1 className="text-2xl font-black">dolaby</h1>
           <p className="text-[var(--text-muted)] font-bold text-xs">{isLogin ? 'سجل دخولك لمتابعة أناقتك' : 'أنشئ حسابك الجديد'}</p>
         </div>
@@ -1113,7 +1146,7 @@ const App = () => {
               <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
                 <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-[var(--bg-card)] md:border-l border-t border-[var(--border-color)] z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-sm">
                   <div className="hidden md:flex items-center justify-center lg:justify-start gap-2 mb-8 w-full lg:px-4 text-indigo-600">
-                    <Sparkles className="w-6 h-6" />
+                    <DolabyLogo className="w-7 h-7" />
                     <h1 className="text-xl font-black hidden lg:block text-[var(--text-main)]">dolaby</h1>
                   </div>
                   <div className="flex md:flex-col w-full justify-between md:justify-start gap-1 lg:gap-2 flex-1">
@@ -1134,7 +1167,7 @@ const App = () => {
                   </div>
                 </nav>
                 <div className="md:hidden flex justify-between items-center p-4 bg-[var(--bg-card)] border-b border-[var(--border-color)] sticky top-0 z-30">
-                  <div className="flex items-center gap-2 text-indigo-600"><Sparkles className="w-5 h-5" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
+                  <div className="flex items-center gap-2 text-indigo-600"><DolabyLogo className="w-6 h-6" /><h1 className="text-lg font-black text-[var(--text-main)]">dolaby</h1></div>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setIsDark(!isDark)}>{isDark ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}</button>
                     <button onClick={() => setShowProfile(true)}>{profile.photo ? <img src={profile.photo} className="w-7 h-7 rounded-full object-cover" /> : <UserCircle className="w-6 h-6 text-[var(--text-muted)]" />}</button>
