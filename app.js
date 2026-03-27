@@ -28,6 +28,12 @@ const db = getFirestore(app);
 const appId = 'anaqa-app';
 
 // ==========================================
+// السياقات (يجب تعريفها قبل استخدامها)
+// ==========================================
+const ToastContext = createContext();
+const ConfirmContext = createContext();
+
+// ==========================================
 // دوال مساعدة
 // ==========================================
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1046,12 +1052,6 @@ const ProfileModal = ({ user, profile, setProfile, onClose, clothes, favorites }
     </div>
   );
 };
-
-// ==========================================
-// السياقات
-// ==========================================
-export const ToastContext = createContext();
-export const ConfirmContext = createContext();
 
 // ==========================================
 // المكون الرئيسي App
