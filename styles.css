@@ -94,3 +94,13 @@ button:active {
   ring: 2px solid #6366f1;
   ring-offset: 2px;
 }
+
+body, 
+body *, 
+nav, 
+nav *, 
+button, 
+input, 
+textarea, 
+.card {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
