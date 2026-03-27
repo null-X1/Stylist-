@@ -298,8 +298,7 @@ const AuthScreen = () => {
 
   const handleGoogle = async () => {
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      showToast('تم تسجيل الدخول بـ Google', 'success');
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch(err) {
       showToast('فشل تسجيل الدخول', 'error');
     }
