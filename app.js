@@ -298,8 +298,9 @@ const AuthScreen = () => {
 
   const handleGoogle = async () => {
     try {
-      await signInWithRedirect(auth, new GoogleAuthProvider());
+      await signInWithPopup(auth, new GoogleAuthProvider());
     } catch(err) {
+      console.error("سبب فشل تسجيل الدخول:", err); 
       showToast('فشل تسجيل الدخول', 'error');
     }
   };
