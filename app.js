@@ -361,39 +361,69 @@ const AuthScreen = () => {
 const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([{ role: 'model', text: 'أهلاً بك! أنا ستايليست الخاص بك. ماذا نرتدي اليوم؟', outfit: null, quickReplies: ["للعمل", "خروج كاجوال", "مناسبة ليلية"] }]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState([{
+    role: 'model',
+    text: 'أهلاً بك! أنا ستايليست الخاص بك. ماذا نرتدي اليوم؟',
+    outfit: null,
+    quickReplies: ["للعمل", "خروج كاجوال", "مناسبة ليلية"],
+    timestamp: Date.now()
+  }]);
   const chatEndRef = useRef(null);
   const showToast = useContext(ToastContext);
 
-  useEffect(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [messages]);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   const handleGenderToggle = async () => {
     const newGender = profile.gender === 'male' ? 'female' : 'male';
-    setProfile(p => ({...p, gender: newGender}));
+    setProfile(p => ({ ...p, gender: newGender }));
     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'settings'), { gender: newGender }, { merge: true });
     showToast(`تم التبديل إلى ${newGender === 'male' ? 'رجالي' : 'نسائي'}`, 'success');
   };
 
   const handleSend = async (txt = null) => {
     const textToSend = txt || input;
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() || loading) return;
 
     const cleanClothes = clothes.filter(c => !c.inLaundry && (c.targetGender === 'unisex' || c.targetGender === profile.gender || !c.targetGender));
     if (cleanClothes.length < 3) {
-      setMessages(p => [...p, { role: 'user', text: textToSend }, { role: 'model', text: 'أحتاج إلى 3 قطع ملابس نظيفة ومناسبة لك على الأقل في الخزانة لتنسيق طقم لك! 🧺 أضف ملابس جديدة أو تأكد من إعدادات ملابسك.' }]);
-      setInput(''); return;
+      setMessages(p => [
+        ...p,
+        { role: 'user', text: textToSend, timestamp: Date.now() },
+        { role: 'model', text: 'أحتاج إلى 3 قطع ملابس نظيفة ومناسبة لك على الأقل في الخزانة لتنسيق طقم لك! 🧺 أضف ملابس جديدة أو تأكد من إعدادات ملابسك.', timestamp: Date.now() }
+      ]);
+      setInput('');
+      return;
     }
 
-    const newHistory = [...messages, { role: 'user', text: textToSend }];
-    setMessages(newHistory);
+    // Add user message
+    const userMessage = { role: 'user', text: textToSend, timestamp: Date.now() };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
+    setIsTyping(true);
 
+    const newHistory = [...messages, userMessage];
     const result = await suggestOutfitWithAI(clothes, newHistory, profile);
+
+    setIsTyping(false);
+
     if (result?.outfit && (result.outfit.topId || result.outfit.bottomId)) {
-      setMessages(p => [...p, { role: 'model', text: result.aiMessage || 'تفضل هذا التنسيق:', outfit: result.outfit, quickReplies: result.quickReplies || ["لون آخر", "حذاء مختلف"] }]);
+      setMessages(prev => [...prev, {
+        role: 'model',
+        text: result.aiMessage || 'تفضل هذا التنسيق:',
+        outfit: result.outfit,
+        quickReplies: result.quickReplies || ["لون آخر", "حذاء مختلف"],
+        timestamp: Date.now()
+      }]);
     } else {
-      setMessages(p => [...p, { role: 'model', text: 'عذراً، لم أجد قطعاً مناسبة في خزانتك لطلبك الحالي. جرب طلباً آخر.' }]);
+      setMessages(prev => [...prev, {
+        role: 'model',
+        text: 'عذراً، لم أجد قطعاً مناسبة في خزانتك لطلبك الحالي. جرب طلباً آخر.',
+        timestamp: Date.now()
+      }]);
     }
     setLoading(false);
   };
@@ -403,48 +433,146 @@ const DashboardView = ({ clothes, profile, setProfile, user, favorites }) => {
     showToast('تم حفظ التنسيق في المفضلات', 'success');
   };
 
+  // Inline keyframes for fade-in animation (add once, but safe to include)
   return (
-    <div className="flex flex-col h-[calc(100dvh-140px)] md:h-[calc(100dvh-50px)]">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-black text-[var(--text-main)] tracking-tight">المساعد الذكي</h2>
-        <button onClick={handleGenderToggle} className="text-xs font-bold bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors shadow-sm">
-          التنسيق لـ: {profile.gender === 'male' ? '👨 رجالي' : '🧕 نسائي'} (تغيير)
-        </button>
-      </div>
+    <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+      `}</style>
+      <div className="flex flex-col h-[calc(100dvh-140px)] md:h-[calc(100dvh-50px)] bg-[var(--bg-base)] rounded-2xl shadow-xl overflow-hidden border border-[var(--border-color)]">
+        {/* Chat Header */}
+        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-md">
+              <DolabyLogo className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-black text-[var(--text-main)]">ستايليست دولابي</h3>
+              <p className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span> متصل الآن
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleGenderToggle}
+            className="text-xs font-bold bg-[var(--bg-base)] border border-[var(--border-color)] px-3 py-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors shadow-sm flex items-center gap-1"
+          >
+            <span>{profile.gender === 'male' ? '👨' : '🧕'}</span>
+            <span className="hidden sm:inline">{profile.gender === 'male' ? 'رجالي' : 'نسائي'}</span>
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto space-y-4 hide-scroll pb-2">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[90%] md:max-w-[75%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-[var(--bg-card)] text-[var(--text-main)] rounded-tl-none border border-[var(--border-color)]'}`}>
-              <p className="font-bold text-sm leading-relaxed">{msg.text}</p>
-              {msg.outfit && (
-                <div className="mt-3">
-                  <OutfitCard outfit={msg.outfit} clothes={clothes} />
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={() => saveOutfit(msg.outfit)} className="text-[11px] font-bold text-[var(--text-muted)] bg-[var(--bg-base)] hover:bg-[var(--hover-bg)] px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 border border-[var(--border-color)]"><Heart className="w-3 h-3"/> حفظ</button>
-                    <button onClick={() => handleSend("تنسيق مختلف")} className="text-[11px] font-bold text-[var(--text-muted)] bg-[var(--bg-base)] hover:bg-[var(--hover-bg)] px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 border border-[var(--border-color)]"><RefreshCw className="w-3 h-3"/> غيره</button>
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 hide-scroll">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
+              {msg.role !== 'user' && (
+                <div className="flex-shrink-0 mr-2 self-end">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-sm">
+                    <DolabyLogo className="w-5 h-5 text-white" />
                   </div>
                 </div>
               )}
-              {msg.quickReplies && !loading && idx === messages.length - 1 && (
-                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[var(--border-color)]">
-                  {msg.quickReplies.map((qr, i) => (
-                    <button key={i} onClick={() => handleSend(qr)} className="text-[11px] font-bold text-indigo-500 bg-indigo-500/10 px-3 py-1.5 rounded-full hover:bg-indigo-500/20 transition-colors">{qr}</button>
-                  ))}
+              <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-3 shadow-sm ${
+                msg.role === 'user'
+                  ? 'bg-indigo-600 text-white rounded-br-none'
+                  : 'bg-[var(--bg-card)] text-[var(--text-main)] rounded-bl-none border border-[var(--border-color)]'
+              }`}>
+                <p className="text-sm leading-relaxed font-medium">{msg.text}</p>
+                {msg.outfit && (
+                  <div className="mt-3">
+                    <OutfitCard outfit={msg.outfit} clothes={clothes} />
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => saveOutfit(msg.outfit)}
+                        className="text-[11px] font-bold text-[var(--text-muted)] bg-[var(--bg-base)] hover:bg-[var(--hover-bg)] px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 border border-[var(--border-color)]"
+                      >
+                        <Heart className="w-3 h-3" /> حفظ
+                      </button>
+                      <button
+                        onClick={() => handleSend("تنسيق مختلف")}
+                        className="text-[11px] font-bold text-[var(--text-muted)] bg-[var(--bg-base)] hover:bg-[var(--hover-bg)] px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 border border-[var(--border-color)]"
+                      >
+                        <RefreshCw className="w-3 h-3" /> غيره
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {msg.quickReplies && !loading && idx === messages.length - 1 && (
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-[var(--border-color)]">
+                    {msg.quickReplies.map((qr, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(qr)}
+                        className="text-[11px] font-bold text-indigo-500 bg-indigo-500/10 px-3 py-1.5 rounded-full hover:bg-indigo-500/20 transition-colors flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" /> {qr}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="text-[9px] text-[var(--text-muted)] mt-1 text-left opacity-70">
+                  {new Date(msg.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              {msg.role === 'user' && profile.photo && (
+                <div className="flex-shrink-0 ml-2 self-end">
+                  <img src={profile.photo} className="w-8 h-8 rounded-full object-cover border border-[var(--border-color)]" />
                 </div>
               )}
             </div>
-          </div>
-        ))}
-        {loading && <div className="flex justify-start"><div className="bg-[var(--bg-card)] rounded-2xl rounded-tl-none p-4 border border-[var(--border-color)] shadow-sm"><Loader2 className="w-5 h-5 animate-spin text-indigo-600" /></div></div>}
-        <div ref={chatEndRef} />
-      </div>
+          ))}
+          {isTyping && (
+            <div className="flex justify-start animate-fadeIn">
+              <div className="bg-[var(--bg-card)] rounded-2xl rounded-bl-none p-3 border border-[var(--border-color)] shadow-sm">
+                <div className="flex space-x-1 rtl:space-x-reverse">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
 
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-1.5 rounded-full flex items-center shadow-sm flex-shrink-0 mt-2">
-        <input type="text" placeholder="ماذا نرتدي اليوم؟" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} className="flex-1 bg-transparent border-none px-4 py-2 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] outline-none font-bold" />
-        <button onClick={() => handleSend()} disabled={loading || !input.trim()} className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-full transition-transform active:scale-95 disabled:opacity-50"><Send className="w-4 h-4 rtl:scale-x-[-1]" /></button>
+        {/* Input Area */}
+        <div className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)]">
+          <div className="flex items-center gap-2 bg-[var(--bg-base)] rounded-full px-3 py-1 border border-[var(--border-color)] focus-within:border-indigo-500 transition-colors">
+            <input
+              type="text"
+              placeholder="اكتب طلبك هنا..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !loading && handleSend()}
+              className="flex-1 bg-transparent border-none py-2 text-sm text-[var(--text-main)] placeholder-[var(--text-muted)] outline-none font-medium"
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={loading || !input.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full transition-all disabled:opacity-50 disabled:scale-100 active:scale-95"
+            >
+              <Send className="w-4 h-4 rtl:scale-x-[-1]" />
+            </button>
+          </div>
+          <div className="flex justify-between items-center mt-2 px-1">
+            <p className="text-[9px] text-[var(--text-muted)] font-bold">✧ دولابي يقترح إطلالات ذكية ✧</p>
+            <button
+              onClick={handleGenderToggle}
+              className="text-[9px] text-indigo-500 font-bold flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" /> تغيير الجنس
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
