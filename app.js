@@ -1072,6 +1072,23 @@ const ProfileModal = ({ user, profile, setProfile, onClose, clothes, favorites }
   );
 };
 
+const SplashScreen = ({ isDark }) => (
+  <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-colors duration-500 ${isDark ? 'bg-[#0B0F19]' : 'bg-white'}`}>
+    <div className="relative flex flex-col items-center">
+      {/* تأثير التوهج الخلفي (Glow) */}
+      <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full animate-pulse"></div>
+      
+      {/* اللوجو مع أنيميشن النبض */}
+      <DolabyLogo className="w-32 h-32 pulse-anim" />
+      
+      <h1 className={`text-4xl font-black mt-8 tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        dolaby
+      </h1>
+    </div>
+  </div>
+);
+
+
 // ==========================================
 // المكون الرئيسي App
 // ==========================================
@@ -1079,6 +1096,7 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState({ gender: 'male', name: '', photo: '' });
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true); 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [clothes, setClothes] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -1087,12 +1105,20 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [confirmState, setConfirmState] = useState({ open: false, message: '', onConfirm: null });
 
-  useEffect(() => {
+    useEffect(() => {
     const savedTheme = localStorage.getItem('anaqa_theme');
     if (savedTheme === 'dark') setIsDark(true);
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setIsAuthLoading(false); });
+    
+    const unsubscribe = onAuthStateChanged(auth, (u) => { 
+      setUser(u); 
+      setIsAuthLoading(false); 
+      // إخفاء شاشة التحميل بنعومة بعد فترة قصيرة
+      setTimeout(() => setShowSplash(false), 2000); 
+    });
+    
     return () => unsubscribe();
   }, []);
+
 
   useEffect(() => {
     if (!user) return;
@@ -1122,12 +1148,18 @@ const App = () => {
 
   if (isAuthLoading) return <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)]"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>;
 
-  return (
+    return (
     <ToastContext.Provider value={showToast}>
       <ConfirmContext.Provider value={confirm}>
         <React.Fragment>
+          {/* عرض شاشة التحميل إذا كانت الحالة true */}
+          {showSplash && <SplashScreen isDark={isDark} />}
+          
           <style>{`:root { ${themeVariables} }`}</style>
           <div className="min-h-[100dvh] w-full bg-[var(--bg-base)] text-[var(--text-main)] transition-colors">
+
+
+
             {!user ? <AuthScreen /> : (
               <div className="pb-20 md:pb-0 md:pr-20 lg:pr-56 h-full">
                 <nav className="fixed bottom-0 w-full md:w-20 lg:w-56 md:right-0 md:top-0 md:h-screen bg-[var(--bg-card)] md:border-l border-t border-[var(--border-color)] z-40 px-3 py-2 md:py-6 flex md:flex-col justify-between md:justify-start items-center lg:items-start shadow-sm">

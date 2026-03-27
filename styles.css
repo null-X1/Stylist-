@@ -104,3 +104,18 @@ input,
 textarea, 
 .card {
   transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
+
+@keyframes soft-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.3)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.7)); }
+}
+.pulse-anim { animation: soft-pulse 2s infinite ease-in-out; }
+
+.overlay-fade-out {
+  animation: fade-out 0.8s forwards;
+  pointer-events: none;
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; visibility: hidden; }
+}
