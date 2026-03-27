@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef, createContext, useContext 
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, signInWithRedirect, updateProfile } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 import { Home, Shirt, PlusCircle, Sparkles, LogOut, Trash2, Loader2, CheckCircle, Bookmark, X, Palette, Moon, Sun, UserCircle, UploadCloud, DownloadCloud, Image as ImageIcon, Upload, Droplets, Edit3, ImageOff, Copy, Check, AlertCircle, Heart, RefreshCw, Send } from 'https://esm.sh/lucide-react@0.344.0';
