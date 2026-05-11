@@ -38,5 +38,10 @@
   .liquid-glass-input {
     @apply bg-white/2 border border-white/5 rounded-full px-6 py-4 backdrop-blur-3xl focus:outline-none focus:border-accent-indigo/40 transition-all font-light;
   }
+body {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translate3d(0,0,0);
+}
 }
 
