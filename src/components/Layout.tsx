@@ -25,23 +25,21 @@ export default function Layout({ children }: LayoutProps) {
       {/* Liquid Blobs Background with gentle light */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <motion.div
-          className="absolute w-[80%] h-[80%] bg-accent-indigo/20 blur-[150px] rounded-full"
-          animate={{
-            x: [0, 50, -30, 0],
-            y: [0, -50, 30, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          style={{ top: '-20%', left: '-20%' }}
-        />
+  className="absolute w-[80%] h-[80%] bg-accent-indigo/20 blur-[100px] rounded-full"
+          animate={window.innerWidth > 768 ? {
+    x: [0, 50, -30, 0],
+    y: [0, -50, 30, 0],
+  } : {}}
+  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+/>
         <motion.div
           className="absolute w-[80%] h-[80%] bg-accent-fuchsia/15 blur-[150px] rounded-full"
-          animate={{
-            x: [0, -40, 60, 0],
-            y: [0, 80, -40, 0],
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          style={{ bottom: '-20%', right: '-20%' }}
-        />
+          animate={window.innerWidth > 768 ? {
+    x: [0, 50, -30, 0],
+    y: [0, -50, 30, 0],
+  } : {}}
+  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+/>
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full mx-auto max-w-3xl h-[60%] bg-white/5 blur-[180px] rounded-full pointer-events-none" />
       </div>
 
