@@ -1,0 +1,6 @@
+{
+  "name": "Dalaby",
+  "description": "Premium AI-powered fashion assistant for smart outfit generation, wardrobe management, and personalized styling with a focus on modest fashion.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["wardrobe_management", "ai_styling", "modest_fashion"]
+}

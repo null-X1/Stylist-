@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "User preferences and profile data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "gender": { "type": "string", "enum": ["male", "female"] },
+        "isModestPreferred": { "type": "boolean" },
+        "stylePreferences": { "type": "array", "items": { "type": "string" } },
+        "onboardingCompleted": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
+    },
+    "clothingItem": {
+      "title": "Clothing Item",
+      "description": "An item in the user's wardrobe",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "type": { "type": "string" },
+        "category": { "type": "string" },
+        "color": { "type": "string" },
+        "material": { "type": "string" },
+        "style": { "type": "string" },
+        "gender": { "type": "string" },
+        "season": { "type": "array", "items": { "type": "string" } },
+        "usageFrequency": { "type": "number" },
+        "isFavorite": { "type": "boolean" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "imageUrl", "type"]
+    },
+    "chat": {
+      "title": "Chat Session",
+      "description": "A styling conversation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      }
+    },
+    "message": {
+      "title": "Chat Message",
+      "description": "A single message in a chat session",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "sender": { "type": "string", "enum": ["user", "ai"] },
+        "text": { "type": "string" },
+        "suggestions": { "type": "array", "items": { "type": "string" } },
+        "timestamp": { "type": "number" }
+      }
+    },
+    "outfit": {
+      "title": "Saved Outfit",
+      "description": "An outfit composed of multiple wardrobe items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "itemIds": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "itemIds", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "User profiles"
+    },
+    "/wardrobe/{itemId}": {
+      "schema": "clothingItem",
+      "description": "Global wardrobe collection (indexed by userId)"
+    },
+    "/outfits/{outfitId}": {
+      "schema": "outfit",
+      "description": "User saved outfits/inspiration"
+    },
+    "/chats/{chatId}": {
+      "schema": "chat",
+      "description": "Chat sessions"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "message",
+      "description": "Messages within a chat session"
+    }
+  }
+}
