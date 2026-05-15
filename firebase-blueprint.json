@@ -10,6 +10,7 @@
         "displayName": { "type": "string" },
         "gender": { "type": "string", "enum": ["male", "female"] },
         "isModestPreferred": { "type": "boolean" },
+        "subscriptionTier": { "type": "string", "enum": ["free", "essential", "unlimited"] },
         "stylePreferences": { "type": "array", "items": { "type": "string" } },
         "onboardingCompleted": { "type": "boolean" }
       },
