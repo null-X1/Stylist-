@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Language = 'en' | 'ar';
 
@@ -38,7 +38,7 @@ const translations: Record<Language, Record<string, string>> = {
     prompt_wedding: 'Wedding outfit',
     prompt_casual: 'Casual weekend style',
     prompt_uni: 'University style',
-    prompt_modest: 'Modest summer fashion',
+    prompt_modest: 'Summer fashion',
     prompt_formal: 'Formal outfit',
     modest_chic: 'Modest Chic',
     sand_collection: 'The Sand Collection',
@@ -110,6 +110,8 @@ const translations: Record<Language, Record<string, string>> = {
     everyday_casual: 'Everyday Casual Items',
     more_variety: 'More variety of tops and bottoms',
     balanced_wardrobe: 'Your wardrobe looks quite balanced!',
+    contact_developer: 'Contact Developer',
+    help_center: 'Help Center',
   },
   ar: {
     app_name: 'دولابي',
@@ -134,7 +136,7 @@ const translations: Record<Language, Record<string, string>> = {
     prompt_wedding: 'لبس لفرح',
     prompt_casual: 'ستايل كاجوال',
     prompt_uni: 'ستايل جامعة',
-    prompt_modest: 'ستايل محترم للصيف',
+    prompt_modest: 'ستايل للصيف',
     prompt_formal: 'ستايل رسمي',
     modest_chic: 'شياكة محتشمة',
     sand_collection: 'تشكيلة الرمال',
@@ -206,13 +208,36 @@ const translations: Record<Language, Record<string, string>> = {
     everyday_casual: 'ملابس كاجوال يومية',
     more_variety: 'مزيد من التنوع في القطع العلوية والسفلية',
     balanced_wardrobe: 'خزانتك تبدو متوازنة تماماً!',
+    contact_developer: 'تواصل مع المطور',
+    help_center: 'مركز المساعدة',
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Language>('en');
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('language');
+    if (saved === 'ar' || saved === 'en') return saved as Language;
+    
+    const browserLang = navigator.language.split('-')[0];
+    return browserLang === 'ar' ? 'ar' : 'en';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('language', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    if (lang === 'ar') {
+      document.documentElement.style.fontSize = '14px';
+      document.body.classList.add('font-arabic');
+      document.body.classList.remove('font-sans');
+    } else {
+      document.documentElement.style.fontSize = '16px';
+      document.body.classList.add('font-sans');
+      document.body.classList.remove('font-arabic');
+    }
+  }, [lang]);
 
   const isRtl = lang === 'ar';
 
@@ -222,7 +247,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, isRtl, t }}>
-      <div dir={isRtl ? 'rtl' : 'ltr'} className={isRtl ? 'font-arabic' : 'font-sans'}>
+      <div dir={isRtl ? 'rtl' : 'ltr'} className="min-h-screen">
         {children}
       </div>
     </LanguageContext.Provider>
