@@ -17,15 +17,6 @@ export default function LandingPage() {
     <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 space-y-32">
       {/* Hero Section */}
       <section className="flex flex-col items-center text-center space-y-10 pt-20">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="px-5 py-2 rounded-full border border-white/5 bg-white/2 text-[10px] font-bold tracking-[0.2em] uppercase mb-4 text-slate-400"
-        >
-          {t('modest_fashion')}
-        </motion.div>
-        
         <motion.h1 
           className="text-5xl md:text-7xl lg:text-9xl font-light tracking-tight leading-none text-white max-w-4xl"
           initial={{ opacity: 0, y: 30 }}
@@ -87,7 +78,7 @@ export default function LandingPage() {
           </div>
           <h3 className="text-2xl font-bold">Smart AI Stylist</h3>
           <p className="opacity-60 leading-relaxed">
-            Our AI understands your style, the occasion, and even Islamic modesty rules to provide the perfect outfit.
+            Our AI understands your style and the occasion to provide the perfect outfit.
           </p>
         </div>
         

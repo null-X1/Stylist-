@@ -359,26 +359,6 @@ export default function AddClothingPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 rounded-[24px] bg-white/5 border border-white/10 mt-8 gap-4">
-              <div className="flex gap-4 items-center">
-                <div className="w-10 h-10 rounded-xl bg-accent-indigo/10 flex items-center justify-center border border-accent-indigo/20 flex-shrink-0">
-                  <ShieldCheck className="text-accent-indigo" size={20} />
-                </div>
-                <div>
-                  <p className="font-bold">{t('modest_selection')}</p>
-                  <p className="text-xs opacity-40 mt-1">{t('apply_religious')}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setFormData({ ...formData, modest: !formData.modest })}
-                className={`w-14 h-8 rounded-full transition-all duration-500 relative flex-shrink-0 ${formData.modest ? 'bg-accent-indigo' : 'bg-white/10'}`}
-              >
-                <div className={`absolute top-1 w-6 h-6 rounded-full transition-all duration-500 bg-white`} 
-                  style={{ left: formData.modest ? 'calc(100% - 28px)' : '4px' }}
-                />
-              </button>
-            </div>
-
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -430,21 +410,6 @@ export default function AddClothingPage() {
                             <span className="text-[10px] uppercase tracking-widest opacity-40 font-bold block mb-1">{t('material')}</span>
                             <span className="font-medium">{item.material || 'Unknown'}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                          <span className="text-xs font-bold">{t('modest_selection')}</span>
-                          <button
-                            onClick={() => {
-                              const newItems = [...aiItems];
-                              newItems[idx].modest = !newItems[idx].modest;
-                              setAiItems(newItems);
-                            }}
-                            className={`w-10 h-6 rounded-full transition-all duration-500 relative ${item.modest ? 'bg-accent-indigo' : 'bg-white/10'}`}
-                          >
-                            <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 bg-white`} 
-                              style={{ left: item.modest ? 'calc(100% - 20px)' : '4px' }}
-                            />
-                          </button>
                         </div>
                       </div>
                     ))}

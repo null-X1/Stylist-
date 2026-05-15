@@ -20,9 +20,11 @@ export default function WardrobePage() {
   const { user, profile } = useAuth();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [items, setItems] = useState<ClothingItem[]>([]);
+  const cachedWardrobeJSON = sessionStorage.getItem(`wardrobe_data_${user?.uid}`);
+  const cachedWardrobe = cachedWardrobeJSON ? JSON.parse(cachedWardrobeJSON) : null;
+  const [items, setItems] = useState<ClothingItem[]>(cachedWardrobe?.items || []);
   const [outfits, setOutfits] = useState<Outfit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedWardrobe);
   const [activeTab, setActiveTab] = useState<'items'|'looks'>('items');
 
   useEffect(() => {
@@ -38,6 +40,16 @@ export default function WardrobePage() {
       // Sort by newest
       fetchedItems.sort((a, b) => b.createdAt - a.createdAt);
       setItems(fetchedItems);
+      
+      const cached = sessionStorage.getItem(`wardrobe_data_${user.uid}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.items = fetchedItems;
+        sessionStorage.setItem(`wardrobe_data_${user.uid}`, JSON.stringify(parsed));
+      } else {
+        sessionStorage.setItem(`wardrobe_data_${user.uid}`, JSON.stringify({ items: fetchedItems }));
+      }
+      
       setLoading(false);
     });
 
