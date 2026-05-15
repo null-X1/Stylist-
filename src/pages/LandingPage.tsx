@@ -95,7 +95,7 @@ export default function LandingPage() {
           <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
             <Cloud className="text-white" size={24} />
           </div>
-          <h3 className="text-2xl font-bold">Wardrobe Cloud</h3>
+          <h3 className="text-2xl font-bold">Dolaby Cloud</h3>
           <p className="opacity-60 leading-relaxed">
             Upload and manage your entire closet in one place. Never lose track of what you own.
           </p>

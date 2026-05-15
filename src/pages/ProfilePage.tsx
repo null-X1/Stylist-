@@ -2,11 +2,21 @@ import { motion } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import GlassCard from '../components/GlassCard';
-import { User, ShieldCheck, Mail, LogOut, Heart, Award } from 'lucide-react';
+import { User, ShieldCheck, Mail, LogOut, Crown, Award, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
-  const { t, lang, setLang } = useLanguage();
+  const { t, lang, setLang, isRtl } = useLanguage();
   const { user, profile, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const getTierName = (tier?: string) => {
+    switch (tier) {
+      case 'unlimited': return isRtl ? 'اللامحدود' : 'Unlimited';
+      case 'essential': return isRtl ? 'الأساسي بلس' : 'Essential';
+      default: return isRtl ? 'الأساسي' : 'Basic';
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -31,6 +41,28 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard className="col-span-1 md:col-span-2 overflow-hidden relative group cursor-pointer" onClick={() => navigate('/subscription')}>
+          <div className="absolute inset-0 bg-gradient-to-r from-accent-cerulean/10 to-accent-fuchsia/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-cerulean to-accent-fuchsia flex items-center justify-center">
+                <Crown size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">{isRtl ? 'باقة الاشتراك' : 'Subscription Plan'}</h3>
+                <p className="opacity-80">
+                  {isRtl ? 'الباقة الحالية: ' : 'Current Tier: '}
+                  <span className="font-bold text-accent-fuchsia">{getTierName(profile?.subscriptionTier)}</span>
+                </p>
+              </div>
+            </div>
+            <button className="px-6 py-3 bg-white text-black rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform">
+              {isRtl ? 'إدارة الاشتراك' : 'Manage Subscription'}
+              <ChevronRight size={18} className={isRtl ? 'rotate-180' : ''} />
+            </button>
+          </div>
+        </GlassCard>
+
         <GlassCard className="space-y-6">
           <h2 className="text-xl font-bold flex items-center gap-3">
             <ShieldCheck className="text-accent-indigo" />

@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
 import { collection, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
 import AvatarPreview from '../components/AvatarPreview';
+import Markdown from 'react-markdown';
 
 export default function ChatPage() {
   const { t, isRtl } = useLanguage();
@@ -201,30 +202,31 @@ export default function ChatPage() {
                       </div>
                       
                       <div className={`p-4 md:p-6 rounded-[2rem] backdrop-blur-3xl border shadow-2xl space-y-4 flex flex-col ${msg.sender === 'ai' ? (isRtl ? 'bg-white/[0.03] border-white/10 rounded-tr-sm text-slate-200' : 'bg-white/[0.03] border-white/10 rounded-tl-sm text-slate-200') : (isRtl ? 'bg-white/10 border-white/10 rounded-tl-sm text-white' : 'bg-white/10 border-white/10 rounded-tr-sm text-white')}`}>
-                        <p className="text-base md:text-[1.1rem] leading-relaxed font-light whitespace-pre-wrap">{msg.text}</p>
+                        <div className="text-base md:text-[1.1rem] leading-relaxed font-light whitespace-pre-wrap markdown-body">
+                          <Markdown>{msg.text}</Markdown>
+                        </div>
                         
                         {msg.selectedItems && msg.selectedItems.length > 0 && (
                           <div className="mt-6 pt-6 border-t border-white/10 space-y-6">
-                            <div className={`grid gap-6 ${msg.selectedItems.length > 1 ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                               {msg.selectedItems.map(item => (
-                                 <div key={item.id} className="bg-black/20 rounded-2xl p-4 flex flex-col items-center gap-4">
-                                   <div className="w-full h-48 bg-white/5 rounded-xl overflow-hidden relative">
-                                     <AvatarPreview 
-                                       gender={genderChat} 
-                                       clothingType={item.type} 
-                                       color={item.color} 
-                                       isModest={profile?.isModestPreferred || true} 
-                                     />
-                                   </div>
-                                   <div className="text-center w-full">
-                                     <h4 className="font-bold text-sm truncate">{item.name}</h4>
-                                     <div className="flex items-center justify-center gap-2 mt-1">
-                                        <div className="w-3 h-3 rounded-full border border-white/20" style={{ backgroundColor: item.color }} />
-                                        <span className="text-xs opacity-60 uppercase tracking-wider">{item.type}</span>
-                                     </div>
-                                   </div>
-                                 </div>
-                               ))}
+                            <div className="bg-black/20 rounded-2xl p-6 flex flex-col items-center gap-6">
+                              <div className="w-full max-w-[250px] h-64 bg-white/5 rounded-xl overflow-hidden relative">
+                                <AvatarPreview 
+                                  gender={genderChat} 
+                                  items={msg.selectedItems}
+                                  isModest={profile?.isModestPreferred || true} 
+                                />
+                              </div>
+                              <div className="w-full flex-col flex gap-2">
+                                <h4 className="font-bold text-sm text-center mb-2">{isRtl ? 'القطع المقترحة:' : 'Selected Pieces:'}</h4>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                  {msg.selectedItems.map(item => (
+                                    <div key={item.id} className="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
+                                      <div className="w-3 h-3 rounded-full border border-white/20" style={{ backgroundColor: item.color }} />
+                                      <span className="text-xs font-medium">{item.name} <span className="opacity-50 font-normal">({item.type})</span></span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                             
                             <div className="flex justify-end">

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import GlassCard from '../components/GlassCard';
@@ -12,7 +12,7 @@ import { analyzeClothingImage } from '../services/geminiService';
 import AvatarPreview from '../components/AvatarPreview';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { ClothingItem } from '../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,8 +47,21 @@ export default function AddClothingPage() {
   const [mode, setMode] = useState<'choose' | 'ai' | 'manual'>('choose');
   const [image, setImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisAttempted, setAnalysisAttempted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentItemsCount, setCurrentItemsCount] = useState(0);
+  const { profile } = useAuth();
   
+  useEffect(() => {
+    async function fetchCount() {
+      if (!user) return;
+      const q = query(collection(db, 'wardrobe'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      setCurrentItemsCount(snapshot.size);
+    }
+    fetchCount();
+  }, [user]);
+
   const [formData, setFormData] = useState({
     type: TYPES[0],
     category: 'casual' as any,
@@ -83,6 +96,7 @@ export default function AddClothingPage() {
         setImage(compressedBase64);
         if (mode === 'ai') {
            setIsAnalyzing(true);
+           setAnalysisAttempted(false);
            setAiItems([]); // reset previous
            try {
              const result = await analyzeClothingImage(compressedBase64);
@@ -93,6 +107,7 @@ export default function AddClothingPage() {
              console.error(error);
            } finally {
              setIsAnalyzing(false);
+             setAnalysisAttempted(true);
            }
         }
       };
@@ -103,6 +118,7 @@ export default function AddClothingPage() {
   const handleAIDetect = async () => {
     if (!image) return;
     setIsAnalyzing(true);
+    setAnalysisAttempted(false);
     setAiItems([]); // reset previous
     try {
       const result = await analyzeClothingImage(image);
@@ -113,11 +129,22 @@ export default function AddClothingPage() {
       console.error(error);
     } finally {
       setIsAnalyzing(false);
+      setAnalysisAttempted(true);
     }
   };
 
   const handleSave = async () => {
     if (!user) return;
+
+    const limit = profile?.subscriptionTier === 'unlimited' ? Infinity : (profile?.subscriptionTier === 'essential' ? 50 : 15);
+    const itemsToAdd = mode === 'ai' ? aiItems.length : 1;
+
+    if (currentItemsCount + itemsToAdd > limit) {
+      alert(t('limit_exceeded') || 'You have reached the maximum number of items for your current subscription. Please upgrade your plan.');
+      navigate('/subscription');
+      return;
+    }
+
     setIsSaving(true);
     try {
       if (mode === 'ai') {
@@ -421,6 +448,14 @@ export default function AddClothingPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : analysisAttempted ? (
+                  <div className="text-center py-8 bg-red-500/10 rounded-2xl border border-red-500/20">
+                    <p className="text-red-400 font-bold mb-2">
+                       {/* Hardcoding text since we don't know if translation exists for this specific message */}
+                       لا يوجد ملابس في الصورة. الرجاء التأكد من رفع صورة واضحة لقطعة الملابس.
+                    </p>
+                    <p className="text-sm opacity-60">No clothing items detected in this image.</p>
                   </div>
                 ) : (
                   <p className="text-center opacity-40 py-8">{t('no_items_detected')} {t('upload_to_start')}</p>

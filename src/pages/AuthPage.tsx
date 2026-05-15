@@ -10,10 +10,11 @@ import GlassCard from '../components/GlassCard';
 import { LogIn, Sparkles } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useState, FormEvent } from 'react';
+import { translateAuthError } from '../utils/errorHandling';
 
 export default function AuthPage() {
   const { signIn, signInWithEmail, signUpWithEmail, user } = useAuth();
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ export default function AuthPage() {
       await signIn();
     } catch (error) {
       console.error(error);
-      setError((error as Error).message);
+      setError(translateAuthError(error, isRtl));
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +47,7 @@ export default function AuthPage() {
       }
     } catch (error) {
       console.error(error);
-      setError((error as Error).message);
+      setError(translateAuthError(error, isRtl));
     } finally {
       setIsLoading(false);
     }
