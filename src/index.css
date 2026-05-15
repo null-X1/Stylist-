@@ -24,7 +24,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-glass-bg backdrop-blur-2xl border border-glass-border rounded-[32px] shadow-2xl;
+    @apply bg-[#151515]/90 md:bg-glass-bg md:backdrop-blur-2xl backdrop-blur-md border border-glass-border rounded-[32px] md:shadow-2xl shadow-xl;
   }
   
   .glass-glow {
@@ -36,12 +36,26 @@
   }
 
   .liquid-glass-input {
-    @apply bg-white/2 border border-white/5 rounded-full px-6 py-4 backdrop-blur-3xl focus:outline-none focus:border-accent-indigo/40 transition-all font-light;
+    @apply bg-white/5 md:bg-white/2 border border-white/5 rounded-full px-6 py-4 md:backdrop-blur-3xl backdrop-blur-md focus:outline-none focus:border-accent-indigo/40 transition-all font-light;
   }
-body {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translate3d(0,0,0);
+  
+  .markdown-body strong {
+    font-weight: 600;
+  }
+  
+  .markdown-body ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    padding-inline-start: 1.5rem; 
+  }
+  
+  .markdown-body li {
+    margin-bottom: 0.5rem;
+  }
 }
+
+.rtl .markdown-body ul {
+  padding-left: 0;
+  padding-right: 1.5rem;
 }
 

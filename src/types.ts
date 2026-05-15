@@ -61,4 +61,6 @@ export interface UserProfile {
   isModestPreferred: boolean;
   stylePreferences: string[];
   onboardingCompleted: boolean;
+  subscriptionTier?: 'free' | 'essential' | 'unlimited';
+  photoURL?: string;
 }

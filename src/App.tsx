@@ -15,6 +15,8 @@ import AnalysisDashboard from './pages/AnalysisDashboard';
 import AddClothingPage from './pages/AddClothingPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
+import SubscriptionPage from './pages/SubscriptionPage';
+import OfflineBanner from './components/OfflineBanner';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -38,6 +40,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
+        <OfflineBanner />
         <Router>
           <Routes>
             <Route path="/" element={<PublicRoute><Layout><LandingPage /></Layout></PublicRoute>} />
@@ -47,6 +50,7 @@ export default function App() {
             <Route path="/analysis" element={<ProtectedRoute><Layout><AnalysisDashboard /></Layout></ProtectedRoute>} />
             <Route path="/add" element={<ProtectedRoute><Layout><AddClothingPage /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout><ProfilePage /></Layout></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><Layout><SubscriptionPage /></Layout></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
