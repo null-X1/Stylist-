@@ -44,7 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             gender: 'female',
             isModestPreferred: true,
             stylePreferences: [],
-            onboardingCompleted: false
+            onboardingCompleted: false,
+            subscriptionTier: 'free'
           };
           await setDoc(docRef, newProfile);
           setProfile(newProfile);

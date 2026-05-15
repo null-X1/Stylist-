@@ -16,7 +16,7 @@ interface LanguageContextType {
 
 const translations: Record<Language, Record<string, string>> = {
   en: {
-    app_name: 'Dolaby',
+    app_name: 'Dolaby AI',
     hero_title: 'Your Personal',
     hero_title_italic: 'AI Stylist',
     hero_subtitle: 'Smart wardrobe management and personalized outfit suggestions tailored just for you.',
