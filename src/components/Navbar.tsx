@@ -42,7 +42,7 @@ export default function Navbar() {
               className={`flex flex-col items-center gap-1 transition-all ${location.pathname === item.path ? 'text-white opacity-100 scale-110' : 'opacity-40 hover:opacity-100'}`}
             >
               <item.icon size={20} className="sm:w-6 sm:h-6 w-5 h-5" />
-              <span className="text-[8px] sm:text-[9px] uppercase font-bold tracking-[0.1em] text-center max-w-16 h-4 overflow-hidden">{item.label}</span>
+              <span className="text-[8px] sm:text-[9px] uppercase font-bold tracking-[0.1em] text-center whitespace-nowrap">{item.label}</span>
             </Link>
           ))}
         </div>
