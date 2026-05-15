@@ -7,6 +7,36 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+function parseJsonResponse(text: string) {
+  text = text || '';
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    console.warn("JSON parse failed, attempting fallback...", err);
+    // Remove markdown code blocks if present
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (match) {
+      return JSON.parse(match[1]);
+    }
+    // Attempt brute-force extraction of object or array
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    const firstBracket = text.indexOf('[');
+    const lastBracket = text.lastIndexOf(']');
+    
+    // Check which one appears first
+    const isObject = firstBrace !== -1 && lastBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket);
+    const isArray = firstBracket !== -1 && lastBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace);
+    
+    if (isObject) {
+      return JSON.parse(text.substring(firstBrace, lastBrace + 1));
+    } else if (isArray) {
+      return JSON.parse(text.substring(firstBracket, lastBracket + 1));
+    }
+    throw err;
+  }
+}
+
 export async function analyzeClothingImage(base64Image: string) {
   try {
     const response = await ai.models.generateContent({
@@ -44,9 +74,50 @@ export async function analyzeClothingImage(base64Image: string) {
       }
     });
 
-    return JSON.parse(response.text || '[]');
+    return parseJsonResponse(response.text || '[]');
   } catch (error) {
     console.error("AI Analysis Error:", error);
+    throw error;
+  }
+}
+
+export async function getWardrobeInsights(wardrobe: any[], language: string, isModest: boolean, gender: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      config: {
+        systemInstruction: `You are Dalaby, a premium world-class AI fashion stylist and image consultant.
+Your task is to analyze the user's wardrobe and provide 2 things:
+1. "missing_essentials": A list of short strings (1-4 words each) describing fundamental clothing items the user is missing based on their current wardrobe, their gender, and modesty preference (if applicable). Suggest maximum 4 items. If their wardrobe is fully complete, return an empty array or suggest very advanced complementary accessories.
+2. "styling_tips": A list of objects containing a "title" and "description" (short, 1-2 sentences) giving them specific, brilliant, tailored advice on how to pair the items they CURRENTLY own. Focus on color harmony, proportions, and style mixing using their actual items. Provide exactly 2 tips.
+
+${isModest ? `CRITICAL MODESTY CONSTRAINT:
+The user specifically requested "Modest Fashion" (Islamic guidelines). 
+Ensure missing items and tips align perfectly with these guidelines (e.g. suggesting loose-fitting clothes, long sleeves).` : ''}
+
+USER PROFILE: The user is a ${gender}.
+
+Provide the response in the following language: ${language === 'ar' ? 'Arabic' : 'English'}
+
+Wardrobe List:
+${JSON.stringify(wardrobe)}
+
+Return your response STRICTLY in JSON format:
+{
+  "missing_essentials": ["string", "string"],
+  "styling_tips": [
+    { "title": "string", "description": "string" },
+    { "title": "string", "description": "string" }
+  ]
+}`,
+        responseMimeType: "application/json"
+      },
+      contents: [{ role: 'user', parts: [{ text: "Analyze my wardrobe and give me insights." }] }]
+    });
+
+    return parseJsonResponse(response.text || '{}');
+  } catch (error) {
+    console.error("AI Insights Error:", error);
     throw error;
   }
 }
@@ -92,7 +163,7 @@ Return your response STRICTLY in JSON format:
       }))
     });
 
-    return JSON.parse(response.text || '{}');
+    return parseJsonResponse(response.text || '{}');
   } catch (error) {
     console.error("AI Styling Error:", error);
     throw error;
