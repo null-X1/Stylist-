@@ -76,9 +76,9 @@ export default function LandingPage() {
           <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
             <Sparkles className="text-white" size={24} />
           </div>
-          <h3 className="text-2xl font-bold">Smart AI Stylist</h3>
+          <h3 className="text-2xl font-bold">Smart Stylist</h3>
           <p className="opacity-60 leading-relaxed">
-            Our AI understands your style and the occasion to provide the perfect outfit.
+            Our system understands your style and the occasion to provide the perfect outfit.
           </p>
         </div>
         
@@ -98,7 +98,7 @@ export default function LandingPage() {
           </div>
           <h3 className="text-2xl font-bold">Rapid Detection</h3>
           <p className="opacity-60 leading-relaxed">
-            Upload a photo and let our AI automatically detect clothing types, colors, and materials.
+            Upload a photo and let our system automatically detect clothing types, colors, and materials.
           </p>
         </div>
       </section>

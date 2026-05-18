@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, Crown, Star, Sparkles, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,9 +12,18 @@ export default function SubscriptionPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletNumber, setWalletNumber] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'submitting' | 'sent' | 'success'>('idle');
   const [screenshot, setScreenshot] = useState<File | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscribed') === 'true') {
+      setShowSuccessModal(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const currentTier = profile?.subscriptionTier || 'free';
 
@@ -93,7 +102,7 @@ export default function SubscriptionPage() {
               
               setPaymentStatus('success');
               setTimeout(() => {
-                 window.location.reload();
+                 window.location.href = window.location.pathname + '?subscribed=true';
               }, 3000);
             } else if (statusData.status === 'rejected') {
               clearInterval(intervalId);
@@ -126,7 +135,7 @@ export default function SubscriptionPage() {
         'حفظ الإطلالات الأساسية',
       ] : [
         'Add up to 15 clothing items',
-        'Basic AI styling',
+        'Basic styling',
         'Save basic outfits',
       ],
       color: 'from-slate-500 to-slate-400',
@@ -143,7 +152,7 @@ export default function SubscriptionPage() {
         'تنسيق الملابس بناءاً على المناسبة',
       ] : [
         'Add up to 50 clothing items',
-        'Advanced AI styling',
+        'Advanced styling',
         'Priority support',
         'Occasion-based styling',
       ],
@@ -163,7 +172,7 @@ export default function SubscriptionPage() {
         'تنسيقات سفر وتخزين (قريباً)',
       ] : [
         'Unlimited clothing items',
-        'Infinite AI features',
+        'Infinite features',
         'Instant support',
         'Full wardrobe analysis',
         'Travel & packing styling (Soon)',
@@ -180,8 +189,8 @@ export default function SubscriptionPage() {
         </h1>
         <p className="text-lg text-white/60 max-w-2xl mx-auto">
           {isRtl 
-            ? 'اختر الباقة المناسبة لك واستمتع بمميزات الذكاء الاصطناعي المتقدمة لتنسيق ملابسك بكل سهولة.' 
-            : 'Choose the right plan for you and enjoy advanced AI features to style your outfits easily.'}
+            ? 'اختر الباقة المناسبة لك واستمتع بالمميزات المتقدمة لتنسيق ملابسك بكل سهولة.' 
+            : 'Choose the right plan for you and enjoy advanced features to style your outfits easily.'}
         </p>
       </div>
 
@@ -254,7 +263,7 @@ export default function SubscriptionPage() {
       </div>
 
       {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111]/90 md:bg-black/60 md:backdrop-blur-sm p-4">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -305,7 +314,8 @@ export default function SubscriptionPage() {
             <div className="flex items-center gap-4 pt-4">
               <button 
                 onClick={() => setShowWalletModal(false)}
-                className="flex-1 py-3 rounded-full bg-white/5 hover:bg-white/10 font-bold"
+                disabled={paymentStatus === 'submitting'}
+                className="flex-1 py-3 rounded-full bg-white/5 hover:bg-white/10 font-bold disabled:opacity-50"
               >
                 {isRtl ? 'إلغاء' : 'Cancel'}
               </button>
@@ -367,6 +377,39 @@ export default function SubscriptionPage() {
           )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#151515] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center space-y-6"
+            >
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-green-500 to-green-400 mx-auto flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                <Check className="w-8 h-8 text-white" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                  {isRtl ? 'تهانينا!' : 'Congratulations!'}
+                </h3>
+                <p className="text-white/60">
+                  {isRtl 
+                    ? 'لقد تم تفعيل اشتراكك بنجاح. استمتع بكافة مميزات باقتك الجديدة.'
+                    : 'Your subscription has been successfully activated. Enjoy all the features of your new plan.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full py-3 rounded-full bg-white/10 hover:bg-white/20 font-bold transition-all"
+              >
+                {isRtl ? 'إغلاق' : 'Close'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

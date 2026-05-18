@@ -43,7 +43,7 @@ export default function ChatPage() {
       const newOutfit: Outfit = {
         id: outfitId,
         userId: user.uid,
-        name: isRtl ? 'إطلالة الذكاء الاصطناعي' : 'AI Suggested Look',
+        name: isRtl ? 'إطلالة مقترحة' : 'Suggested Look',
         description: '',
         items: matchedItems,
         createdAt: Date.now()

@@ -173,6 +173,7 @@ export default function WardrobePage() {
                       <img 
                         src={item.imageUrl} 
                         alt={item.type} 
+                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                     ) : (
@@ -274,7 +275,7 @@ export default function WardrobePage() {
                 <Shirt size={48} className="opacity-20" />
                 <p className="text-lg">{isRtl ? 'لا يوجد إطلالات محفوظة حتى الآن' : 'No saved looks yet'}</p>
                 <Link to="/chat" className="px-6 py-2 rounded-full border border-white/10 hover:bg-white/5 transition-colors mt-2 text-white/80">
-                  {isRtl ? 'اطلب مساعدة منسق الأزياء' : 'Get AI styling suggestions'}
+                  {isRtl ? 'اطلب مساعدة منسق الأزياء' : 'Get styling suggestions'}
                 </Link>
              </div>
           )}

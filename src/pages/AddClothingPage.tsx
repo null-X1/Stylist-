@@ -209,7 +209,7 @@ export default function AddClothingPage() {
               <Sparkles size={40} className="text-white" />
             </div>
             <h2 className="text-2xl font-bold mb-2">{t('ai_entry')}</h2>
-            <p className="opacity-60">Upload a photo and let AI fill in all the details automatically.</p>
+            <p className="opacity-60">Upload a photo and let our system fill in all the details automatically.</p>
           </GlassCard>
 
           <GlassCard 
