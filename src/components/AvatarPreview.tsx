@@ -123,7 +123,7 @@ export default function AvatarPreview({ gender, items = [], clothingType, color 
       
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">
         <span className="w-1.5 h-1.5 rounded-full bg-accent-fuchsia animate-pulse shadow-[0_0_8px_#ff00ff]" />
-        <span className="text-[9px] uppercase tracking-widest font-bold opacity-60 text-white">AI Studio</span>
+        <span className="text-[9px] uppercase tracking-widest font-bold opacity-60 text-white">Studio</span>
       </div>
     </div>
   );
