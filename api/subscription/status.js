@@ -14,9 +14,13 @@ if (!getApps().length) {
 const db = getFirestore();
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { userId } = req.body;
-  if (userId) await db.collection('pendingApprovals').doc(userId).delete();
-  res.json({ success: true });
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  const snap = await db.collection('pendingApprovals').doc(userId).get();
+  if (!snap.exists) return res.json({ status: "none" });
+
+  res.json(snap.data());
 }
